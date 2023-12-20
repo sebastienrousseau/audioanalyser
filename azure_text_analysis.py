@@ -98,27 +98,23 @@ class TextAnalysis:
         }
 
     @staticmethod
-    async def process_text_files(client, input_folder):
-        print(f"Input folder: {input_folder}")
-        for filename in os.listdir(input_folder):
-            if filename.endswith('.txt'):
-                file_path = os.path.join(input_folder, filename)
-                print(f"Processing file: {filename}")
-                with open(file_path, 'r') as file:
-                    text = file.read()
-                    analysis_results = await TextAnalysis.analyze_text(client, text)
-                    print(f"Analysis results for {filename}: {analysis_results}")
-                    await TextAnalysis.save_results(filename, analysis_results)
+    async def process_text_file(client, input_file):
+        print(f"Processing file: {input_file}")
+        with open(input_file, 'r') as file:
+            text = file.read()
+            analysis_results = await TextAnalysis.analyze_text(client, text)
+            print(f"Analysis results for {input_file}: {analysis_results}")
+            await TextAnalysis.save_results(input_file, analysis_results)
 
     @staticmethod
-    async def save_results(filename, results):
+    async def save_results(input_file, results):
         # Create 'Analysis' folder if it doesn't exist
         analysis_folder = 'Analysis'
         if not os.path.exists(analysis_folder):
             os.makedirs(analysis_folder)
 
         # Modify the path to save files inside the 'Analysis' folder
-        base_filename = os.path.splitext(filename)[0]
+        base_filename = os.path.splitext(os.path.basename(input_file))[0]
 
         # Save to TXT with plain text format
         txt_filename = os.path.join(analysis_folder, f'{base_filename}_analysis.txt')
@@ -126,7 +122,7 @@ class TextAnalysis:
             current_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             # Executive summary format
             file.write('Transcription analysis\n\n')
-            file.write(f'File: {filename}\n')
+            file.write(f'File: {input_file}\n')
             file.write(f'Time: {current_time}\n\n')
             file.write(f'Summary:\n')
 
@@ -191,10 +187,10 @@ class TextAnalysis:
             )
             cursor.execute(
                 f"INSERT INTO {DB_TABLE_NAME} (filename, analysis) VALUES (?, ?)",
-                (filename, json.dumps(TextAnalysis.convert_to_serializable(results))),
+                (input_file, json.dumps(TextAnalysis.convert_to_serializable(results))),
             )
             conn.commit()
-        print(f'Saved analysis of {filename} to database.')
+        print(f'Saved analysis of {input_file} to database.')
 
 
 async def run_text_analysis_process():
@@ -203,16 +199,21 @@ async def run_text_analysis_process():
         if not os.path.exists(config.output_folder):
             os.makedirs(config.output_folder)
 
+        input_folder = config.input_folder  # Fixed: Use config directly
         endpoint = config.az_lg_endpoint  # Fixed: Use config directly
         key = config.az_lg_key  # Fixed: Use config directly
-        client = TextAnalyticsClient(endpoint=endpoint, credential=AzureKeyCredential(key))
 
-        input_folder = config.input_folder  # Fixed: Use config directly
-        await TextAnalysis.process_text_files(client, input_folder)
+        for filename in os.listdir(input_folder):
+            if filename.endswith('.txt'):
+                input_file = os.path.join(input_folder, filename)
+                client = TextAnalyticsClient(endpoint=endpoint, credential=AzureKeyCredential(key))  # Create a new client for each file
+                await TextAnalysis.process_text_file(client, input_file)
+
         print('All files processed.')
 
     except Exception as e:
         logger.error(f"Script execution failed: {e}")
+
 
 if __name__ == '__main__':
     asyncio.run(run_text_analysis_process())

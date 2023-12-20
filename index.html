@@ -44,7 +44,8 @@
             <button onclick="processAllSpeechToText()">Process All Audio Files</button>
             <pre id="speechToTextResults"></pre>
         </div>
-
+    </div>
+    <div class="container">
         <!-- Transcripts Section -->
         <h2>Transcripts</h2>
         <div class="section">
@@ -52,14 +53,24 @@
             <button onclick="hideTranscripts()">Hide Transcripts</button>
             <ul id="transcriptsList"></ul>
         </div>
-
+    </div>
+    <div class="container">
         <!-- Text Analysis Section -->
         <h2>Text Analysis</h2>
         <div class="section">
             <button onclick="processAllAnalysis()">Analysed All Transcripts</button>
             <pre id="allAnalysisAllResults"></pre>
         </div>
-
+    </div>
+    <div class="container">
+        <!-- Text Analysis Status Section -->
+        <h2>Text Analysis Status</h2>
+        <div class="section">
+            <button onclick="checkAnalysisStatus()">Check Text Analysis Status</button>
+            <pre id="textAnalysisStatus"></pre>
+        </div>
+    </div>
+    <div class="container">
         <!-- Reports Section -->
         <h2>Reports</h2>
         <div class="section">
@@ -141,8 +152,37 @@
             });
         }
 
+        async function checkAnalysisStatus() {
+            try {
+                const statusElement = document.getElementById('textAnalysisStatus');
+                statusElement.textContent = 'Checking status...';
+
+                const response = await fetch('/get_analysis_status', {
+                    method: 'GET'
+                });
+
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+
+                const data = await response.json();
+                if (data.status === 'Completed') {
+                    statusElement.textContent = 'Text analysis completed.';
+                } else if (data.status.startsWith('Error')) {
+                    statusElement.textContent = `Error: ${data.status}`;
+                } else {
+                    statusElement.textContent = 'Text analysis is still processing...';
+                    // Poll every 5 seconds
+                    setTimeout(checkAnalysisStatus, 5000);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error checking text analysis status.');
+            }
+        }
+
         function showReports() {
-            fetch('/get_reports_list', {
+            fetch('/get_transcripts_list', {
                 method: 'GET'
             })
             .then(response => {

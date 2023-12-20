@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Speech and Text Analysis Results</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        .container {
+            width: 80%;
+            margin: 20px auto;
+            background: #fff;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h2 {
+            color: #333;
+        }
+        .section {
+            margin-bottom: 20px;
+        }
+        pre {
+            background-color: #eee;
+            padding: 10px;
+            border: 1px solid #ddd;
+            overflow: auto;
+        }
+        button {
+            margin-top: 10px;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Speech-to-Text Section -->
+        <h2>Speech-to-Text</h2>
+        <div class="section">
+            <button onclick="processAllSpeechToText()">Process All Audio Files</button>
+            <pre id="speechToTextResults"></pre>
+        </div>
+
+        <!-- Transcripts Section -->
+        <h2>Transcripts</h2>
+        <div class="section">
+            <button onclick="showTranscripts()">Show Transcripts</button>
+            <button onclick="hideTranscripts()">Hide Transcripts</button>
+            <ul id="transcriptsList"></ul>
+        </div>
+
+        <!-- Text Analysis Section -->
+        <h2>Text Analysis</h2>
+        <div class="section">
+            <button onclick="processAllAnalysis()">Analysed All Transcripts</button>
+            <pre id="allAnalysisAllResults"></pre>
+        </div>
+    </div>
+
+    <!-- JavaScript for AJAX Requests -->
+    <script>
+        function processAllSpeechToText() {
+            fetch('/process_all_speech_to_text', {
+                method: 'GET'
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                // Displaying the logs in the 'speechToTextResults' element
+                document.getElementById('speechToTextResults').textContent = data.logs || data.result;
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error processing audio files.');
+            });
+        }
+
+        async function processAllAnalysis() {
+            console.log("processAllAnalysis() called");
+            try {
+                const response = await fetch('/process_text_analysis', {
+                    method: 'GET'
+                });
+
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+
+                const data = await response.json();
+                // Displaying the logs in the 'speechToTextResults' element
+                document.getElementById('allAnalysisAllResults').textContent = data.logs || data.result;
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error processing transcripts.');
+            }
+        }
+
+
+        function fetchTranscript() {
+            fetch('/get_transcripts_list', {
+                method: 'GET'
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();  // Expecting a JSON response
+            })
+            .then(files => {
+                const container = document.getElementById('transcriptsContainer');
+                container.innerHTML = '';
+                files.forEach(file => {
+                    const textarea = document.createElement('textarea');
+                    textarea.rows = 4;
+                    textarea.cols = 50;
+                    textarea.value = file.content;  // Set the content of the file
+                    container.appendChild(textarea);
+                });
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error fetching transcripts.');
+            });
+        }
+
+        function showTranscripts() {
+            fetch('/get_transcripts_list', {
+                method: 'GET'
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(files => {
+                const container = document.getElementById('transcriptsList'); // Updated ID
+                container.innerHTML = ''; // Clear existing content
+                files.forEach(file => {
+                    const transcriptText = file.content;
+                    const filename = file.filename;
+                    
+                    // Create a list item with the filename and transcript content
+                    const listItem = document.createElement('li');
+                    listItem.innerHTML = `<strong>File: ${filename}:</strong><br><br>${transcriptText}<br><br>`;
+                    
+                    container.appendChild(listItem);
+                });
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error fetching or displaying transcripts.');
+            });
+        }
+
+        function fetchAnalysis() {
+            fetch('/get_text_analysis', {
+                method: 'GET'
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();  // Expecting a JSON response
+            })
+            .then(data => {
+                const container = document.getElementById('textAnalysisResults');
+                container.innerHTML = '';
+                const analysis = data.analysis;
+                Object.keys(analysis).forEach(key => {
+                    const textarea = document.createElement('textarea');
+                    textarea.rows = 4;
+                    textarea.cols = 50;
+                    textarea.value = analysis[key];  // Set the content of the file
+                    container.appendChild(textarea);
+                });
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error fetching text analysis.');
+            });
+        }
+
+        function showAnalysis() {
+            fetch('/get_text_analysis', {
+                method: 'GET'
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                document.getElementById('textAnalysisResults').textContent = JSON.stringify(data, null, 2);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error fetching or displaying text analysis.');
+            });
+        }
+
+        // Function to hide transcripts
+        function hideTranscripts() {
+            const container = document.getElementById('transcriptsList');
+            container.innerHTML = ''; // Clear the transcript list
+        }
+    </script>
+</body>
+</html>

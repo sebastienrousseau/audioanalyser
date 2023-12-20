@@ -115,7 +115,8 @@ class SpeechToText:
                                (audio_filename, result))
             conn.commit()
 
-if __name__ == "__main__":
+
+def run_speech_to_text_process():
     try:
         config = Config()
         if not os.path.exists(config.output_folder):
@@ -125,3 +126,7 @@ if __name__ == "__main__":
         speech_to_text_processor.process_audio_files()
     except Exception as e:
         logger.error(f"Script execution failed: {e}")
+
+
+if __name__ == "__main__":
+    run_speech_to_text_process()

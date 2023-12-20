@@ -59,6 +59,14 @@
             <button onclick="processAllAnalysis()">Analysed All Transcripts</button>
             <pre id="allAnalysisAllResults"></pre>
         </div>
+
+        <!-- Reports Section -->
+        <h2>Reports</h2>
+        <div class="section">
+            <button onclick="showReports()">Show Reports</button>
+            <button onclick="hideReports()">Hide Reports</button>
+            <ul id="reportsList"></ul>
+        </div>
     </div>
 
     <!-- JavaScript for AJAX Requests -->
@@ -103,34 +111,6 @@
             }
         }
 
-
-        function fetchTranscript() {
-            fetch('/get_transcripts_list', {
-                method: 'GET'
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                return response.json();  // Expecting a JSON response
-            })
-            .then(files => {
-                const container = document.getElementById('transcriptsContainer');
-                container.innerHTML = '';
-                files.forEach(file => {
-                    const textarea = document.createElement('textarea');
-                    textarea.rows = 4;
-                    textarea.cols = 50;
-                    textarea.value = file.content;  // Set the content of the file
-                    container.appendChild(textarea);
-                });
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Error fetching transcripts.');
-            });
-        }
-
         function showTranscripts() {
             fetch('/get_transcripts_list', {
                 method: 'GET'
@@ -161,36 +141,8 @@
             });
         }
 
-        function fetchAnalysis() {
-            fetch('/get_text_analysis', {
-                method: 'GET'
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                return response.json();  // Expecting a JSON response
-            })
-            .then(data => {
-                const container = document.getElementById('textAnalysisResults');
-                container.innerHTML = '';
-                const analysis = data.analysis;
-                Object.keys(analysis).forEach(key => {
-                    const textarea = document.createElement('textarea');
-                    textarea.rows = 4;
-                    textarea.cols = 50;
-                    textarea.value = analysis[key];  // Set the content of the file
-                    container.appendChild(textarea);
-                });
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Error fetching text analysis.');
-            });
-        }
-
-        function showAnalysis() {
-            fetch('/get_text_analysis', {
+        function showReports() {
+            fetch('/get_reports_list', {
                 method: 'GET'
             })
             .then(response => {
@@ -199,18 +151,34 @@
                 }
                 return response.json();
             })
-            .then(data => {
-                document.getElementById('textAnalysisResults').textContent = JSON.stringify(data, null, 2);
+            .then(files => {
+                const container = document.getElementById('reportsList');
+                container.innerHTML = ''; // Clear existing content
+                files.forEach(file => {
+                    const reportText = file.content;
+                    const filename = file.filename;
+                    
+                    // Create a list item with the filename and transcript content
+                    const listItem = document.createElement('li');
+                    listItem.innerHTML = `<strong>Report: ${filename}:</strong><br><br>${reportText}<br><br>`;
+                    
+                    container.appendChild(listItem);
+                });
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('Error fetching or displaying text analysis.');
+                alert('Error fetching or displaying transcripts.');
             });
         }
 
         // Function to hide transcripts
         function hideTranscripts() {
             const container = document.getElementById('transcriptsList');
+            container.innerHTML = ''; // Clear the transcript list
+        }
+        // Function to hide reports
+        function hideReports() {
+            const container = document.getElementById('reportsList');
             container.innerHTML = ''; // Clear the transcript list
         }
     </script>

@@ -55,7 +55,7 @@ class SpeechTextAnalysisServer:
     @cherrypy.expose
     @cherrypy.tools.json_out()
     def get_transcripts_list(self):
-        outputs_folder = './Outputs/'  # Path to the Outputs folder
+        outputs_folder = './Outputs/'
         try:
             # Find all transcript files in the Outputs folder
             list_of_files = glob.glob(os.path.join(outputs_folder, '*.txt'))
@@ -68,6 +68,23 @@ class SpeechTextAnalysisServer:
         except IOError:
             cherrypy.response.status = 500
             return "Error reading transcript files."
+
+    @cherrypy.expose
+    @cherrypy.tools.json_out()
+    def get_reports_list(self):
+        reports_folder = './Analysis/'
+        try:
+            # Find all report files in the Analysis folder
+            list_of_files = glob.glob(os.path.join(reports_folder, '*.txt'))
+            reports = []
+            for file_path in list_of_files:
+                with open(file_path, 'r') as file:
+                    content = file.read()
+                    reports.append({"filename": os.path.basename(file_path), "content": content})
+            return reports
+        except IOError:
+            cherrypy.response.status = 500
+            return "Error reading report files."
 
 if __name__ == '__main__':
     current_dir = os.path.dirname(os.path.abspath(__file__))

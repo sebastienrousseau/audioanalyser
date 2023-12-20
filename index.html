@@ -34,6 +34,13 @@
             margin-top: 10px;
             display: block;
         }
+        .report-content {
+            background-color: #f8f8f8;
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin-bottom: 10px;
+            white-space: pre-wrap; /* Preserves whitespace and line breaks */
+        }
     </style>
 </head>
 <body>
@@ -182,7 +189,7 @@
         }
 
         function showReports() {
-            fetch('/get_transcripts_list', {
+            fetch('/get_reports_list', {
                 method: 'GET'
             })
             .then(response => {
@@ -197,17 +204,24 @@
                 files.forEach(file => {
                     const reportText = file.content;
                     const filename = file.filename;
-                    
-                    // Create a list item with the filename and transcript content
+
+                    // Create elements for the filename and report content
                     const listItem = document.createElement('li');
-                    listItem.innerHTML = `<strong>Report: ${filename}:</strong><br><br>${reportText}<br><br>`;
-                    
+                    const filenameHeader = document.createElement('h3');
+                    filenameHeader.textContent = `Report: ${filename}`;
+
+                    const reportDiv = document.createElement('div');
+                    reportDiv.classList.add('report-content');
+                    reportDiv.innerHTML = reportText.replace(/\n/g, '<br>'); // Replace line breaks with <br>
+
+                    listItem.appendChild(filenameHeader);
+                    listItem.appendChild(reportDiv);
                     container.appendChild(listItem);
                 });
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('Error fetching or displaying transcripts.');
+                alert('Error fetching or displaying reports.');
             });
         }
 

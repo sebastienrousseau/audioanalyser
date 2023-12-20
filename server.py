@@ -50,19 +50,23 @@ class SpeechTextAnalysisServer:
             return {"error": "An error occurred during text analysis"}
 
     def run_analysis_thread(self):
+        temporary_folder = './Temp/'
+        status_file_path = os.path.join(temporary_folder, 'analysis_status.txt')
         try:
             asyncio.run(run_text_analysis_process())
-            with open('analysis_status.txt', 'w') as file:
+            with open(status_file_path, 'w') as file:
                 file.write('Completed')
         except Exception as e:
-            with open('analysis_status.txt', 'w') as file:
+            with open(status_file_path, 'w') as file:
                 file.write(f'Error: {str(e)}')
 
     @cherrypy.expose
     @cherrypy.tools.json_out()
     def get_analysis_status(self):
-        if os.path.exists('analysis_status.txt'):
-            with open('analysis_status.txt', 'r') as file:
+        temporary_folder = './Temp/'
+        status_file_path = os.path.join(temporary_folder, 'analysis_status.txt')
+        if os.path.exists(status_file_path):
+            with open(status_file_path, 'r') as file:
                 status = file.read()
             return {"status": status}
         else:
@@ -71,7 +75,7 @@ class SpeechTextAnalysisServer:
     @cherrypy.expose
     @cherrypy.tools.json_out()
     def get_transcripts_list(self):
-        outputs_folder = './Outputs/'  # Path to the Outputs folder
+        outputs_folder = './Outputs/'
         try:
             # Find all transcript files in the Outputs folder
             list_of_files = glob.glob(os.path.join(outputs_folder, '*.txt'))
@@ -84,6 +88,24 @@ class SpeechTextAnalysisServer:
         except IOError:
             cherrypy.response.status = 500
             return {"error": "Error reading transcript files."}
+
+    @cherrypy.expose
+    @cherrypy.tools.json_out()
+    def get_reports_list(self):
+        outputs_folder = './Analysis/'
+        try:
+            # Find all report files in the Outputs folder
+            list_of_files = glob.glob(os.path.join(outputs_folder, '*.txt'))
+            reports = []
+            for file_path in list_of_files:
+                with open(file_path, 'r') as file:
+                    content = file.read()
+                    reports.append({"filename": os.path.basename(file_path), "content": content})
+            return reports
+        except IOError:
+            cherrypy.response.status = 500
+            return {"error": "Error reading report files."}
+
 
 if __name__ == '__main__':
     current_dir = os.path.dirname(os.path.abspath(__file__))

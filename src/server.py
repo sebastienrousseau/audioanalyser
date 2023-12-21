@@ -7,8 +7,9 @@ import threading
 import asyncio
 
 # Import your custom functions
-from azure_speech_to_text import run_speech_to_text_process
-from azure_text_analysis import run_text_analysis_process
+from modules.azure_speech_to_text import run_speech_to_text_process
+from modules.azure_text_analysis import run_text_analysis_process
+
 
 class SpeechTextAnalysisServer:
     @cherrypy.expose

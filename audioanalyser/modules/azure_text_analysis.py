@@ -1,3 +1,18 @@
+# Copyright (C) 2023 Sebastien Rousseau.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+# implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import asyncio
 import datetime
 import os
@@ -25,15 +40,16 @@ class Config:
     def __init__(self):
         self.az_lg_endpoint = os.getenv('AZURE_LANGUAGE_ENDPOINT')
         self.az_lg_key = os.getenv('AZURE_LANGUAGE_KEY')
-        self.input_folder = os.getenv('OUTPUT_FOLDER')
-        self.output_folder = os.getenv('ANALYSIS_FOLDER')
+        self.transcripts = os.getenv('TRANSCRIPTS_FOLDER')
+        self.reports = os.getenv('REPORTS_FOLDER')
         self.validate()
 
     def validate(self):
         required_vars = [
             self.az_lg_endpoint,
             self.az_lg_key,
-            self.input_folder,
+            self.transcripts,
+            self.reports,
             DB_TABLE_NAME,
         ]
         if any(var is None for var in required_vars):
@@ -109,15 +125,15 @@ class TextAnalysis:
     @staticmethod
     async def save_results(input_file, results):
         # Create 'Analysis' folder if it doesn't exist
-        analysis_folder = 'Analysis'
-        if not os.path.exists(analysis_folder):
-            os.makedirs(analysis_folder)
+        config = Config()
+        if not os.path.exists(config.reports):
+            os.makedirs(config.reports)
 
         # Modify the path to save files inside the 'Analysis' folder
         base_filename = os.path.splitext(os.path.basename(input_file))[0]
 
         # Save to TXT with plain text format
-        txt_filename = os.path.join(analysis_folder, f'{base_filename}_analysis.txt')
+        txt_filename = os.path.join(config.reports, f'{base_filename}_analysis.txt')
         with open(txt_filename, 'w') as file:
             current_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             # Executive summary format
@@ -170,7 +186,7 @@ class TextAnalysis:
         print(f'Saving results to {txt_filename}')
 
         # Save to JSON
-        json_filename = os.path.join(analysis_folder, f'{base_filename}_analysis.json')
+        json_filename = os.path.join(config.reports, f'{base_filename}_analysis.json')
         with open(json_filename, 'w') as json_file:
             json.dump(
                 TextAnalysis.convert_to_serializable(results), json_file, indent=4
@@ -178,7 +194,7 @@ class TextAnalysis:
         print(f'Saving results to {json_filename}')
 
         # Save to SQLite
-        db_filename = os.path.join(analysis_folder, 'text_analysis.db')
+        db_filename = os.path.join(config.reports, 'text_analysis.db')
         with sqlite3.connect(db_filename) as conn:
             cursor = conn.cursor()
             cursor.execute(
@@ -193,20 +209,19 @@ class TextAnalysis:
         print(f'Saved analysis of {input_file} to database.')
 
 
-async def run_text_analysis_process():
+async def azure_text_analysis():
     try:
         config = Config()
-        if not os.path.exists(config.output_folder):
-            os.makedirs(config.output_folder)
+        if not os.path.exists(config.reports):
+            os.makedirs(config.reports)
 
-        input_folder = config.input_folder  # Fixed: Use config directly
-        endpoint = config.az_lg_endpoint  # Fixed: Use config directly
-        key = config.az_lg_key  # Fixed: Use config directly
+        endpoint = config.az_lg_endpoint
+        key = config.az_lg_key
 
-        for filename in os.listdir(input_folder):
+        for filename in os.listdir(config.transcripts):
             if filename.endswith('.txt'):
-                input_file = os.path.join(input_folder, filename)
-                client = TextAnalyticsClient(endpoint=endpoint, credential=AzureKeyCredential(key))  # Create a new client for each file
+                input_file = os.path.join(config.transcripts, filename)
+                client = TextAnalyticsClient(endpoint=endpoint, credential=AzureKeyCredential(key))
                 await TextAnalysis.process_text_file(client, input_file)
 
         print('All files processed.')
@@ -216,4 +231,4 @@ async def run_text_analysis_process():
 
 
 if __name__ == '__main__':
-    asyncio.run(run_text_analysis_process())
+    asyncio.run(azure_text_analysis())

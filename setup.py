@@ -5,8 +5,8 @@ with open('README.md', 'r', encoding='utf-8') as f:
     long_description = f.read()
 
 setup(
-    name='AzureSpeechToText',
-    version='1.0.0',
+    name='audioanalyser',
+    version='0.0.1',
     author='Your Name',
     author_email='your.email@example.com',
     description='A Python application for Azure AI Speech to Text service',

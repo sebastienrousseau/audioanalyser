@@ -1,3 +1,18 @@
+# Copyright (C) 2023 Sebastien Rousseau.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+# implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import azure.cognitiveservices.speech as speechsdk
 import logging
 import os
@@ -22,12 +37,12 @@ class Config:
     def __init__(self):
         self.api_key = os.getenv('API_KEY')
         self.region = os.getenv('REGION')
-        self.input_folder = os.getenv('INPUT_FOLDER')
-        self.output_folder = os.getenv('OUTPUT_FOLDER')
+        self.SAMPLES_FOLDER = os.getenv('SAMPLES_FOLDER')
+        self.TRANSCRIPTS_FOLDER = os.getenv('TRANSCRIPTS_FOLDER')
         self.validate()
 
     def validate(self):
-        required_vars = [self.api_key, self.region, self.input_folder, self.output_folder, AUDIO_EXTENSION]
+        required_vars = [self.api_key, self.region, self.SAMPLES_FOLDER, self.TRANSCRIPTS_FOLDER, AUDIO_EXTENSION]
         if any(var is None for var in required_vars):
             missing = [var for var, value in locals().items() if value is None]
             logger.error(f"Missing environment variables: {', '.join(missing)}")
@@ -39,16 +54,16 @@ class SpeechToText:
         self.config = config
 
     def process_audio_files(self):
-        for filename in os.listdir(self.config.input_folder):
+        for filename in os.listdir(self.config.SAMPLES_FOLDER):
             if filename.endswith(AUDIO_EXTENSION):
                 self.process_file(filename)
 
     def process_file(self, filename):
-        input_path = os.path.join(self.config.input_folder, filename)
+        input_path = os.path.join(self.config.SAMPLES_FOLDER, filename)
         output_filename = os.path.splitext(filename)[0]
-        output_path = os.path.join(self.config.output_folder, f"{output_filename}.txt")
-        json_path = os.path.join(self.config.output_folder, f"{output_filename}.json")
-        db_filename = os.path.join(self.config.output_folder, 'transcriptions.db')
+        output_path = os.path.join(self.config.TRANSCRIPTS_FOLDER, f"{output_filename}.txt")
+        json_path = os.path.join(self.config.TRANSCRIPTS_FOLDER, f"{output_filename}.json")
+        db_filename = os.path.join(self.config.TRANSCRIPTS_FOLDER, 'transcriptions.db')
 
         logger.info(f"Processing {input_path}")
         results = self.speech_to_text_long(input_path)
@@ -116,11 +131,11 @@ class SpeechToText:
             conn.commit()
 
 
-def run_speech_to_text_process():
+def azure_speech_to_text():
     try:
         config = Config()
-        if not os.path.exists(config.output_folder):
-            os.makedirs(config.output_folder)
+        if not os.path.exists(config.TRANSCRIPTS_FOLDER):
+            os.makedirs(config.TRANSCRIPTS_FOLDER)
 
         speech_to_text_processor = SpeechToText(config)
         speech_to_text_processor.process_audio_files()
@@ -129,4 +144,4 @@ def run_speech_to_text_process():
 
 
 if __name__ == "__main__":
-    run_speech_to_text_process()
+    azure_speech_to_text()

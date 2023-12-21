@@ -67,7 +67,8 @@ class TextAnalysis:
     @staticmethod
     def convert_to_serializable(obj):
         """
-        Converts Azure Text Analytics result objects into a serializable format.
+        Converts Azure Text Analytics result objects into
+        a serializable format.
         """
         if isinstance(obj, list):
             return [TextAnalysis.convert_to_serializable(item) for item in obj]
@@ -76,7 +77,8 @@ class TextAnalysis:
                 key: TextAnalysis.convert_to_serializable(value)
                 for key, value in obj.__dict__.items()
             }
-            # Special handling for models with properties that need custom handling
+            # Special handling for models with properties that
+            # need custom handling
             if hasattr(obj, 'sentences'):
                 obj_dict['sentences'] = [
                     TextAnalysis.convert_to_serializable(sentence)
@@ -133,33 +135,43 @@ class TextAnalysis:
         base_filename = os.path.splitext(os.path.basename(input_file))[0]
 
         # Save to TXT with plain text format
-        txt_filename = os.path.join(config.reports, f'{base_filename}_analysis.txt')
+        txt_filename = os.path.join(
+            config.reports, f'{base_filename}_analysis.txt'
+        )
         with open(txt_filename, 'w') as file:
-            current_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            current_time = datetime.datetime.now().strftime(
+                '%Y-%m-%d %H:%M:%S'
+            )
             # Executive summary format
             file.write('Transcription analysis\n\n')
             file.write(f'File: {input_file}\n')
             file.write(f'Time: {current_time}\n\n')
-            file.write(f'Summary:\n')
+            file.write('Summary:\n')
 
             # Sentiment Analysis Summary
             sentiment_result = results['sentiment'][0]
-            file.write(f'   • Overall Sentiment: {sentiment_result.sentiment}.\n')
+            file.write(
+                f'• Overall Sentiment: {sentiment_result.sentiment}.\n'
+            )
 
             # Enhanced Sentiment Analysis Summary
             sentiment_scores = sentiment_result.confidence_scores
             file.write(
-                f'   • Sentiment Scores - Positive: {sentiment_scores.positive:.2f}, Neutral: {sentiment_scores.neutral:.2f}, Negative: {sentiment_scores.negative:.2f}\n'
+                f'• Sentiment Scores - Positive:'
+                f'{sentiment_scores.positive:.2f},'
+                f'Neutral: {sentiment_scores.neutral:.2f},'
+                f'Negative: {sentiment_scores.negative:.2f}\n'
             )
 
             # Key Entities Summary
             entities_result = results['entities'][0]
             if entities_result.entities:
-                file.write(
-                    '   • Key Entities Identified: '
-                    + ', '.join([entity.text for entity in entities_result.entities[:5]])
-                    + '.\n'
-                )
+                key_entities = [
+                    entity.text for entity in entities_result.entities[:5]
+                ]
+                key_entities_text = ', '.join(key_entities)
+                message = f'• Key Entities Identified: {key_entities_text}.\n'
+                file.write(message)
 
             # Enhanced Key Phrases Summary
             key_phrases_result = results['key_phrases'][0]
@@ -173,23 +185,28 @@ class TextAnalysis:
             # Language Detection Summary
             language_result = results['language'][0]
             file.write(
-                f'   • Detected Language: {language_result.primary_language.name} ({language_result.primary_language.iso6391_name}).\n'
+                f'• Detected Language: {language_result.primary_language.name}'
+                f'({language_result.primary_language.iso6391_name}).\n'
             )
 
             # PII Summary (if applicable)
             pii_result = results['pii'][0]
             if pii_result.entities:
-                file.write('   • Personally identifiable information (PII): Yes.\n')
+                file.write('• Personally identifiable information (PII): Yes.')
             else:
-                file.write('   • Personally identifiable information (PII): No.\n')
+                file.write('• Personally identifiable information (PII): No.')
 
         print(f'Saving results to {txt_filename}')
 
         # Save to JSON
-        json_filename = os.path.join(config.reports, f'{base_filename}_analysis.json')
+        json_filename = os.path.join(
+            config.reports, f'{base_filename}_analysis.json'
+        )
         with open(json_filename, 'w') as json_file:
             json.dump(
-                TextAnalysis.convert_to_serializable(results), json_file, indent=4
+                TextAnalysis.convert_to_serializable(results),
+                json_file,
+                indent=4
             )
         print(f'Saving results to {json_filename}')
 
@@ -202,8 +219,11 @@ class TextAnalysis:
                             (filename TEXT, analysis TEXT)'''
             )
             cursor.execute(
-                f"INSERT INTO {DB_TABLE_NAME} (filename, analysis) VALUES (?, ?)",
-                (input_file, json.dumps(TextAnalysis.convert_to_serializable(results))),
+                f"INSERT INTO {DB_TABLE_NAME} (filename, analysis)"
+                f"VALUES (?, ?)",
+                (input_file, json.dumps(
+                    TextAnalysis.convert_to_serializable(results)
+                )),
             )
             conn.commit()
         print(f'Saved analysis of {input_file} to database.')
@@ -221,7 +241,10 @@ async def azure_text_analysis():
         for filename in os.listdir(config.transcripts):
             if filename.endswith('.txt'):
                 input_file = os.path.join(config.transcripts, filename)
-                client = TextAnalyticsClient(endpoint=endpoint, credential=AzureKeyCredential(key))
+                client = TextAnalyticsClient(
+                    endpoint=endpoint,
+                    credential=AzureKeyCredential(key)
+                )
                 await TextAnalysis.process_text_file(client, input_file)
 
         print('All files processed.')

@@ -34,15 +34,47 @@ width="261"
 
 ## Overview
 
-Analyse your conversations with ease. Our speech-to-text tool offers quick conversion and insightful text analysis.
+### Discover Hidden Insights in Minutes: AI-Powered Audio Analysis for Your Call Recordings
+
+#### Streamline call recording and audio file transcription, uncover actionable insights in seconds with advanced text analysis, powered by Microsoft Azure AI services
+
+- **Go beyond simple transcription:** Discover sentiment, key information, and gain a multi-faceted understanding of your conversations through in-depth analysis and comprehensive reports.
+- **Audio Analyser** leverages the power of Azure's advanced AI services to transform your audio data into valuable insight reports in no time.
 
 ![divider][divider]
 
-## Features
+## Key Features
 
 - **Speech to Text**: Convert spoken language into text using Azure's speech-to-text service.
 - **Text Analysis**: Analyze text for various features using Azure's text analytics service.
+- **Instant Transcription:**
+  - Instantly transcribe audio files and recordings into text.
+- **Support for outputting results in different formats**, including JSON, TXT and SQLite.
+- **Actionable Insights:**
+  - Analyze text for various features, including Overall Sentiment, Positive/Negative Sentiment Analysis,  Identify Key Topics and Entities, Language, Personally Identifiable Information (PII).
+  - Uncover sentiment and key information within conversations.
+- **Data-Driven Reports:**
+  - Generate detailed reports for easy sharing and analysis.
 - **Web Server**: A CherryPy-based web server to handle incoming requests and process them.
+
+![divider][divider]
+
+## Built on a Robust Foundation
+
+- **Azure-powered technology** and a secure **CherryPy web server** ensure accurate analysis and reliable data management.
+- **Scalable architecture:** Adapt seamlessly to your needs, handling large datasets with ease.
+
+**Experience the power of Audio Analyser today!**
+
+![divider][divider]
+
+## Dependencies
+
+- CherryPy
+- Azure Cognitive Services Speech SDK
+- Azure AI Text Analytics
+- Python standard libraries: asyncio, threading, logging, sqlite3, json
+- Dotenv for environment variable management
 
 ![divider][divider]
 
@@ -57,6 +89,18 @@ python3 -m venv venv
 source venv/bin/activate  # On Windows use `venv\Scripts\activate`
 ```
 
+### Installation and Setup
+
+1. Install required Python packages:
+
+```bash
+   pip install cherrypy azure-ai-textanalytics azure-cognitiveservices-speech
+```
+
+2. Set up Azure services and obtain necessary API keys.
+
+3. Configure environment variables for Azure services in a `.env` file.
+
 ### Getting Started
 
 Install `audioanalyser` with just one command:
@@ -65,11 +109,35 @@ Install `audioanalyser` with just one command:
 pip install audioanalyser
 ```
 
+### Usage Instructions
+
+#### To run the Audio Analyser CLI
+
+1. Start the CLI using `audioanalyser`:
+
+```bash
+python -m audioanalyser
+```
+
+2. Follow the instructions to utilize speech-to-text and text analysis features.
+
+3. Access the generated transcript and report files in the `resources` directory in the root folder.
+
+#### To run the Audio Analyser server
+
+1. Start the server using `audioanalyser`:
+
+```bash
+python -m audioanalyser -s
+```
+
+2. Access the server at the specified host and port to utilize speech-to-text and text analysis features.
+
 ## Usage
 
 To run the application, use the following command:
 
-```
+``` bash
 python server.py
 ```
 

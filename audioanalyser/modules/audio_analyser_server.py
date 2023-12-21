@@ -7,8 +7,8 @@ import threading
 import asyncio
 
 # Import your custom functions
-from modules.azure_speech_to_text import run_speech_to_text_process
-from modules.azure_text_analysis import run_text_analysis_process
+from audioanalyser.modules.azure_speech_to_text import azure_speech_to_text
+from audioanalyser.modules.azure_text_analysis import azure_text_analysis
 
 
 class SpeechTextAnalysisServer:
@@ -25,7 +25,7 @@ class SpeechTextAnalysisServer:
             sys.stdout = log_capture_string = io.StringIO()
 
             # Run the speech-to-text process
-            run_speech_to_text_process()
+            azure_speech_to_text()
 
             # Reset stdout and get log output
             sys.stdout = old_stdout
@@ -51,10 +51,10 @@ class SpeechTextAnalysisServer:
             return {"error": "An error occurred during text analysis"}
 
     def run_analysis_thread(self):
-        temporary_folder = './Temp/'
+        temporary_folder = './'
         status_file_path = os.path.join(temporary_folder, 'analysis_status.txt')
         try:
-            asyncio.run(run_text_analysis_process())
+            asyncio.run(azure_text_analysis())
             with open(status_file_path, 'w') as file:
                 file.write('Completed')
         except Exception as e:
@@ -64,7 +64,7 @@ class SpeechTextAnalysisServer:
     @cherrypy.expose
     @cherrypy.tools.json_out()
     def get_analysis_status(self):
-        temporary_folder = './Temp/'
+        temporary_folder = './'
         status_file_path = os.path.join(temporary_folder, 'analysis_status.txt')
         if os.path.exists(status_file_path):
             with open(status_file_path, 'r') as file:
@@ -76,7 +76,7 @@ class SpeechTextAnalysisServer:
     @cherrypy.expose
     @cherrypy.tools.json_out()
     def get_transcripts_list(self):
-        outputs_folder = './Outputs/'
+        outputs_folder = './resources/transcripts/'
         try:
             # Find all transcript files in the Outputs folder
             list_of_files = glob.glob(os.path.join(outputs_folder, '*.txt'))
@@ -93,7 +93,7 @@ class SpeechTextAnalysisServer:
     @cherrypy.expose
     @cherrypy.tools.json_out()
     def get_reports_list(self):
-        outputs_folder = './Analysis/'
+        outputs_folder = './resources/reports/'
         try:
             # Find all report files in the Outputs folder
             list_of_files = glob.glob(os.path.join(outputs_folder, '*.txt'))
@@ -108,7 +108,7 @@ class SpeechTextAnalysisServer:
             return {"error": "Error reading report files."}
 
 
-if __name__ == '__main__':
+def audio_analyser_server():
     current_dir = os.path.dirname(os.path.abspath(__file__))
     config = {
         '/': {
@@ -117,3 +117,6 @@ if __name__ == '__main__':
         }
     }
     cherrypy.quickstart(SpeechTextAnalysisServer(), '/', config)
+
+if __name__ == '__main__':
+    audio_analyser_server()

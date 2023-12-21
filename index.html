@@ -141,7 +141,7 @@
             })
             .then(files => {
                 const container = document.getElementById('transcriptsList'); // Updated ID
-                container.innerHTML = ''; // Clear existing content
+                container.innerHTML = '';
                 files.forEach(file => {
                     const transcriptText = file.content;
                     const filename = file.filename;
@@ -200,7 +200,7 @@
             })
             .then(files => {
                 const container = document.getElementById('reportsList');
-                container.innerHTML = ''; // Clear existing content
+                container.innerHTML = '';
                 files.forEach(file => {
                     const reportText = file.content;
                     const filename = file.filename;

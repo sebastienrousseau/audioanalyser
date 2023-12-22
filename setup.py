@@ -15,7 +15,7 @@ setup(
     url='https://audioanalyser.pro',
     packages=find_packages(),
     install_requires=[
-        'azure-cognitiveservices-speech>=1.15.0',
+        'azure-cognitiveservices-speech>=1.34.0',
         'python-dotenv>=0.15.0',
         'requests>=2.25.1',
         'cherrypy>=18.6.0',

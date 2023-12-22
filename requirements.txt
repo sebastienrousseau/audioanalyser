@@ -1,8 +1,9 @@
+aiohttp
 asyncio
-azure-ai-textanalytics
+azure-ai-textanalytics==5.3.0
 azure-cognitiveservices-speech==1.34.0
 azure-core==1.29.6
 cherrypy==18.9.0
 datetime
-python-dotenv
+python-dotenv==1.0.0
 requests

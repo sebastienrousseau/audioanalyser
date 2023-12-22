@@ -11,8 +11,8 @@ setup(
     author_email='your.email@example.com',
     description='A Python application for Azure AI Speech to Text service',
     long_description=long_description,
-    long_description_content_type='text/markdown',  # If your README is in markdown
-    url='https://yourprojecthomepage.com',  # Replace with your project's URL
+    long_description_content_type='text/markdown',
+    url='https://audioanalyser.pro',
     packages=find_packages(),
     install_requires=[
         'azure-cognitiveservices-speech>=1.15.0',

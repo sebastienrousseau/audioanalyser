@@ -29,7 +29,10 @@ AUDIO_EXTENSION = os.getenv('AUDIO_EXTENSION')
 DB_TABLE_NAME = 'transcriptions'
 
 # Set up logging format
-logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s app - %(message)s')
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s %(levelname)s app - %(message)s'
+)
 logger = logging.getLogger('AzureSpeechToText')
 
 
@@ -42,10 +45,21 @@ class Config:
         self.validate()
 
     def validate(self):
-        required_vars = [self.api_key, self.region, self.SAMPLES_FOLDER, self.TRANSCRIPTS_FOLDER, AUDIO_EXTENSION]
+        required_vars = [
+            self.api_key,
+            self.region,
+            self.SAMPLES_FOLDER,
+            self.TRANSCRIPTS_FOLDER,
+            AUDIO_EXTENSION
+        ]
         if any(var is None for var in required_vars):
-            missing = [var for var, value in locals().items() if value is None]
-            logger.error(f"Missing environment variables: {', '.join(missing)}")
+            missing = [
+                var for var,
+                value in locals().items() if value is None
+            ]
+            logger.error(
+                f"Missing environment variables: {', '.join(missing)}"
+            )
             raise EnvironmentError("Missing required environment variables.")
 
 
@@ -61,9 +75,18 @@ class SpeechToText:
     def process_file(self, filename):
         input_path = os.path.join(self.config.SAMPLES_FOLDER, filename)
         output_filename = os.path.splitext(filename)[0]
-        output_path = os.path.join(self.config.TRANSCRIPTS_FOLDER, f"{output_filename}.txt")
-        json_path = os.path.join(self.config.TRANSCRIPTS_FOLDER, f"{output_filename}.json")
-        db_filename = os.path.join(self.config.TRANSCRIPTS_FOLDER, 'transcriptions.db')
+        output_path = os.path.join(
+            self.config.TRANSCRIPTS_FOLDER,
+            f"{output_filename}.txt"
+        )
+        json_path = os.path.join(
+            self.config.TRANSCRIPTS_FOLDER,
+            f"{output_filename}.json"
+        )
+        db_filename = os.path.join(
+            self.config.TRANSCRIPTS_FOLDER,
+            'transcriptions.db'
+        )
 
         logger.info(f"Processing {input_path}")
         results = self.speech_to_text_long(input_path)
@@ -74,10 +97,18 @@ class SpeechToText:
             self.write_to_sqlite(db_filename, filename, results)
 
     def speech_to_text_long(self, audio_filename):
-        logger.info(f"Starting speech recognition for {audio_filename}. Please wait...")
-        speech_config = speechsdk.SpeechConfig(subscription=self.config.api_key, region=self.config.region)
+        logger.info(
+            f"Starting speech recognition for {audio_filename}. Please wait..."
+        )
+        speech_config = speechsdk.SpeechConfig(
+            subscription=self.config.api_key,
+            region=self.config.region
+        )
         audio_input = speechsdk.audio.AudioConfig(filename=audio_filename)
-        speech_recognizer = speechsdk.SpeechRecognizer(speech_config=speech_config, audio_config=audio_input)
+        speech_recognizer = speechsdk.SpeechRecognizer(
+            speech_config=speech_config,
+            audio_config=audio_input
+        )
 
         all_results = []
         done = threading.Event()
@@ -89,12 +120,20 @@ class SpeechToText:
         def handle_recognition_error(evt):
             if evt.result.reason == speechsdk.ResultReason.Canceled:
                 cancellation = evt.result.cancellation_details
-                if cancellation.reason == speechsdk.CancellationReason.EndOfStream:
-                    logger.info("Recognition completed: End of audio stream reached.")
-                elif cancellation.reason == speechsdk.CancellationReason.Error:
-                    logger.error(f"Recognition canceled due to an error: {cancellation.error_details}")
+                if (cancellation.reason ==
+                        speechsdk.CancellationReason.EndOfStream):
+                    logger.info(
+                        "Recognition completed: End of audio stream reached."
+                    )
+                elif (cancellation.reason ==
+                        speechsdk.CancellationReason.Error):
+                    message = (f"Recognition canceled due to an error: "
+                               f"{cancellation.error_details}")
+                    logger.error(message)
                 else:
-                    logger.error(f"Recognition canceled: Reason={cancellation.reason}")
+                    logger.error(
+                        f"Recognition canceled: Reason={cancellation.reason}"
+                    )
             else:
                 logger.error(f"Recognition error: {evt}")
             done.set()
@@ -107,7 +146,12 @@ class SpeechToText:
         done.wait()
 
         if not all_results:
-            logger.warning(f"No results for {audio_filename}. Check the audio file format and content.")
+            Warning(f"No results for {audio_filename}. "
+                    f"Check the audio file format and content.")
+            logger.warning(
+                f"No results for {audio_filename}. "
+                f"Check the audio file format and content."
+                )
 
         return all_results
 
@@ -126,9 +170,12 @@ class SpeechToText:
             cursor.execute(f'''CREATE TABLE IF NOT EXISTS {DB_TABLE_NAME}
                               (filename TEXT, transcription TEXT)''')
             for result in results:
-                cursor.execute(f"INSERT INTO {DB_TABLE_NAME} (filename, transcription) VALUES (?, ?)",
-                               (audio_filename, result))
-            conn.commit()
+                sql_statement = (
+                    f"INSERT INTO {DB_TABLE_NAME} (filename, transcription)"
+                    f"VALUES (?, ?)"
+                )
+                cursor.execute(sql_statement, (audio_filename, result))
+                conn.commit()
 
 
 def azure_speech_to_text():

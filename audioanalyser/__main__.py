@@ -30,16 +30,6 @@ from audioanalyser.modules.audio_analyser_server import audio_analyser_server
 
 
 def main():
-    # ASCII Art Banner
-    ascii_banner = """
-     _             _ _            _                _
-    / \  _   _  __| (_) ___      / \   _ __   __ _| |_   _ ___  ___ _ __
-   / _ \| | | |/ _` | |/ _ \    / _ \ | '_ \ / _` | | | | / __|/ _ \ '__|
-  / ___ \ |_| | (_| | | (_) |  / ___ \| | | | (_| | | |_| \__ \  __/ |
- /_/   \_\__,_|\__,_|_|\___/  /_/   \_\_| |_|\__,_|_|\__, |___/\___|_|
-                                                     |___/
-"""
-    print(ascii_banner)
     parser = argparse.ArgumentParser(
         prog='audioanalyser',
         description='Audio Analyser CLI'

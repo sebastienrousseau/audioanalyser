@@ -35,7 +35,9 @@ class SpeechTextAnalysisServer:
         except Exception as e:
             cherrypy.log(f"Error during speech-to-text processing: {str(e)}")
             cherrypy.response.status = 500
-            return {"error": "An error occurred during speech-to-text processing"}
+            return {
+                "error": "An error occurred during speech-to-text processing"
+            }
 
     @cherrypy.expose
     @cherrypy.tools.json_out()
@@ -52,7 +54,10 @@ class SpeechTextAnalysisServer:
 
     def run_analysis_thread(self):
         temporary_folder = './'
-        status_file_path = os.path.join(temporary_folder, 'analysis_status.txt')
+        status_file_path = os.path.join(
+            temporary_folder,
+            'analysis_status.txt'
+        )
         try:
             asyncio.run(azure_text_analysis())
             with open(status_file_path, 'w') as file:
@@ -65,7 +70,10 @@ class SpeechTextAnalysisServer:
     @cherrypy.tools.json_out()
     def get_analysis_status(self):
         temporary_folder = './'
-        status_file_path = os.path.join(temporary_folder, 'analysis_status.txt')
+        status_file_path = os.path.join(
+            temporary_folder,
+            'analysis_status.txt'
+        )
         if os.path.exists(status_file_path):
             with open(status_file_path, 'r') as file:
                 status = file.read()
@@ -84,7 +92,12 @@ class SpeechTextAnalysisServer:
             for file_path in list_of_files:
                 with open(file_path, 'r') as file:
                     content = file.read()
-                    transcripts.append({"filename": os.path.basename(file_path), "content": content})
+                    transcripts.append(
+                        {
+                            "filename": os.path.basename(file_path),
+                            "content": content
+                        }
+                    )
             return transcripts
         except IOError:
             cherrypy.response.status = 500
@@ -101,7 +114,12 @@ class SpeechTextAnalysisServer:
             for file_path in list_of_files:
                 with open(file_path, 'r') as file:
                     content = file.read()
-                    reports.append({"filename": os.path.basename(file_path), "content": content})
+                    reports.append(
+                        {
+                            "filename": os.path.basename(file_path),
+                            "content": content
+                        }
+                    )
             return reports
         except IOError:
             cherrypy.response.status = 500
@@ -117,6 +135,7 @@ def audio_analyser_server():
         }
     }
     cherrypy.quickstart(SpeechTextAnalysisServer(), '/', config)
+
 
 if __name__ == '__main__':
     audio_analyser_server()

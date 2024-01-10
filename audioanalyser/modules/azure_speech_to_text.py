@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import azure.cognitiveservices.speech as speechsdk  # Azure's speech-to-text SDK
+import azure.cognitiveservices.speech as speechsdk  # Azure's speech-to-text
 import logging  # Logging module for tracking events and errors
 import os  # Operating system interfaces (file and directory handling)
 import json  # JSON encoder and decoder

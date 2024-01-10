@@ -1,0 +1,12 @@
+Transcription analysis
+
+File: ./resources/transcripts/02_call_airport_cab.txt
+Time: 2024-01-10 02:00:50
+
+Summary:
+• Overall Sentiment: mixed.
+• Sentiment Scores - Positive:0.76,Neutral: 0.14,Negative: 0.10
+• Key Entities Identified: ABC, ma, am, Ashwin, Matali.
+   • Notable Topics: next two months, booking confirmation ID, next 10-15 minutes, booking ID, next 15 minutes.
+• Detected Language: English(en).
+• Personally identifiable information (PII): Yes.

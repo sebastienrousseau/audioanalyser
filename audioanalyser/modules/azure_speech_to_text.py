@@ -1,4 +1,4 @@
-# Copyright (C) 2023 Sebastien Rousseau.
+# Copyright (C) 2023-2024 Sebastien Rousseau.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,20 +13,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import azure.cognitiveservices.speech as speechsdk
-import logging
-import os
-import json
-import sqlite3
-from dotenv import load_dotenv
-import threading
+import azure.cognitiveservices.speech as speechsdk  # Azure's speech-to-text SDK
+import logging  # Logging module for tracking events and errors
+import os  # Operating system interfaces (file and directory handling)
+import json  # JSON encoder and decoder
+import sqlite3  # SQLite database API
+from dotenv import load_dotenv  # Load environment variables from .env file
+import threading  # Support for concurrent operations
 
 # Load environment variables from .env file
 load_dotenv()
 
 # Constants
 AUDIO_EXTENSION = os.getenv('AUDIO_EXTENSION')
-DB_TABLE_NAME = 'transcriptions'
+# DB_TABLE_NAME = 'transcriptions'
 
 # Set up logging format
 logging.basicConfig(
@@ -38,18 +38,20 @@ logger = logging.getLogger('AzureSpeechToText')
 
 class Config:
     def __init__(self):
-        self.api_key = os.getenv('API_KEY')
+        self.api_key = os.getenv('AZURE_AUDIO_TEXT_KEY')
         self.region = os.getenv('REGION')
-        self.SAMPLES_FOLDER = os.getenv('SAMPLES_FOLDER')
+        self.INPUT_FOLDER = os.getenv('INPUT_FOLDER')
         self.TRANSCRIPTS_FOLDER = os.getenv('TRANSCRIPTS_FOLDER')
+        self.transcripts_db_table_name = os.getenv('TRANSCRIPTS_DB_TABLE_NAME')
         self.validate()
 
     def validate(self):
         required_vars = [
             self.api_key,
             self.region,
-            self.SAMPLES_FOLDER,
+            self.INPUT_FOLDER,
             self.TRANSCRIPTS_FOLDER,
+            self.transcripts_db_table_name,
             AUDIO_EXTENSION
         ]
         if any(var is None for var in required_vars):
@@ -68,12 +70,12 @@ class SpeechToText:
         self.config = config
 
     def process_audio_files(self):
-        for filename in os.listdir(self.config.SAMPLES_FOLDER):
+        for filename in os.listdir(self.config.INPUT_FOLDER):
             if filename.endswith(AUDIO_EXTENSION):
                 self.process_file(filename)
 
     def process_file(self, filename):
-        input_path = os.path.join(self.config.SAMPLES_FOLDER, filename)
+        input_path = os.path.join(self.config.INPUT_FOLDER, filename)
         output_filename = os.path.splitext(filename)[0]
         output_path = os.path.join(
             self.config.TRANSCRIPTS_FOLDER,
@@ -165,14 +167,18 @@ class SpeechToText:
             json.dump(results, json_file, indent=4)
 
     def write_to_sqlite(self, db_filename, audio_filename, results):
+        config = Config()
         with sqlite3.connect(db_filename) as conn:
             cursor = conn.cursor()
-            cursor.execute(f'''CREATE TABLE IF NOT EXISTS {DB_TABLE_NAME}
-                              (filename TEXT, transcription TEXT)''')
+            cursor.execute(f'''CREATE TABLE IF NOT EXISTS {
+                config.transcripts_db_table_name
+            } (filename TEXT, transcription TEXT)''')
             for result in results:
                 sql_statement = (
-                    f"INSERT INTO {DB_TABLE_NAME} (filename, transcription)"
-                    f"VALUES (?, ?)"
+                    f'''INSERT INTO {
+                        config.transcripts_db_table_name
+                    } (filename, transcription)'''
+                    f'''VALUES (?, ?)'''
                 )
                 cursor.execute(sql_statement, (audio_filename, result))
                 conn.commit()

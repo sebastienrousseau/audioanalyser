@@ -1,4 +1,4 @@
-# Copyright (C) 2023 Sebastien Rousseau.
+# Copyright (C) 2023-2024 Sebastien Rousseau.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# Import necessary libraries
 import asyncio
 import datetime
 import os
@@ -23,13 +24,10 @@ from azure.core.credentials import AzureKeyCredential
 from azure.ai.textanalytics.aio import TextAnalyticsClient
 from dotenv import load_dotenv
 
-# Load environment variables from .env file
+# Load environment variables from .env file for configuration
 load_dotenv()
 
-# Set environment variables
-DB_TABLE_NAME = 'text_analysis'
-
-# Set up logging format
+# Set up logging for the application
 logging.basicConfig(
     level=logging.INFO, format='%(asctime)s %(levelname)s app - %(message)s'
 )
@@ -37,21 +35,40 @@ logger = logging.getLogger('AzureTextAnalysis')
 
 
 class Config:
+    """
+    Configuration class for setting up environment variables and validation.
+
+    Attributes:
+        az_lg_endpoint (str): Azure Language endpoint URL.
+        az_lg_key (str): Azure Language subscription key.
+        transcripts (str): Folder path for input transcripts.
+        reports (str): Folder path for output reports.
+        db_name (str): Table name for storing analysis results.
+    """
     def __init__(self):
+        # Initialize configuration with environment variables
         self.az_lg_endpoint = os.getenv('AZURE_LANGUAGE_ENDPOINT')
         self.az_lg_key = os.getenv('AZURE_LANGUAGE_KEY')
         self.transcripts = os.getenv('TRANSCRIPTS_FOLDER')
         self.reports = os.getenv('REPORTS_FOLDER')
+        self.db_name = os.getenv('ANALYSIS_DB_TABLE_NAME')
         self.validate()
 
     def validate(self):
+        """
+        Validates the presence of required environment variables.
+
+        Raises:
+            EnvironmentError: If any required environment variable is missing.
+        """
         required_vars = [
             self.az_lg_endpoint,
             self.az_lg_key,
             self.transcripts,
             self.reports,
-            DB_TABLE_NAME,
+            self.db_name,
         ]
+        # Check for missing environment variables and log error if any
         if any(var is None for var in required_vars):
             missing = [var for var, value in locals().items() if value is None]
             logger.error(
@@ -61,14 +78,26 @@ class Config:
 
 
 class TextAnalysis:
+    """
+    Provides methods for analysing text using Azure Text Analytics and handling
+    results.
+
+    Attributes:
+        config (Config): Configuration object with necessary settings.
+    """
     def __init__(self, config):
         self.config = config
 
     @staticmethod
     def convert_to_serializable(obj):
         """
-        Converts Azure Text Analytics result objects into
-        a serializable format.
+        Converts Azure Text Analytics result objects into a serializable format
+
+        Args:
+            obj: The Azure Text Analytics result object.
+
+        Returns:
+            A serializable representation of the Azure Text Analytics result.
         """
         if isinstance(obj, list):
             return [TextAnalysis.convert_to_serializable(item) for item in obj]
@@ -98,7 +127,16 @@ class TextAnalysis:
 
     @staticmethod
     async def analyze_text(client, document):
-        # Perform various text analytics tasks
+        """
+        Performs various text analytics tasks on a given document.
+
+        Args:
+            client (TextAnalyticsClient): The Azure Text Analytics client.
+            document (str): The text document to analyze.
+
+        Returns:
+            A dictionary of analysis results such as sentiment, entities, etc.
+        """
         async with client:
             sentiment_result = await client.analyze_sentiment([document])
             entity_result = await client.recognize_entities([document])
@@ -117,6 +155,13 @@ class TextAnalysis:
 
     @staticmethod
     async def process_text_file(client, input_file):
+        """
+        Processes a text file for analysis.
+
+        Args:
+            client (TextAnalyticsClient): The Azure Text Analytics client.
+            input_file (str): Path to the text file to be processed.
+        """
         print(f"Processing file: {input_file}")
         with open(input_file, 'r') as file:
             text = file.read()
@@ -126,6 +171,13 @@ class TextAnalysis:
 
     @staticmethod
     async def save_results(input_file, results):
+        """
+        Saves analysis results in different formats.
+
+        Args:
+            input_file (str): Path to the input text file.
+            results (dict): The analysis results to save.
+        """
         # Create 'Analysis' folder if it doesn't exist
         config = Config()
         if not os.path.exists(config.reports):
@@ -215,11 +267,11 @@ class TextAnalysis:
         with sqlite3.connect(db_filename) as conn:
             cursor = conn.cursor()
             cursor.execute(
-                f'''CREATE TABLE IF NOT EXISTS {DB_TABLE_NAME}
+                f'''CREATE TABLE IF NOT EXISTS {config.db_name}
                             (filename TEXT, analysis TEXT)'''
             )
             cursor.execute(
-                f"INSERT INTO {DB_TABLE_NAME} (filename, analysis)"
+                f"INSERT INTO {config.db_name} (filename, analysis)"
                 f"VALUES (?, ?)",
                 (input_file, json.dumps(
                     TextAnalysis.convert_to_serializable(results)
@@ -230,7 +282,11 @@ class TextAnalysis:
 
 
 async def azure_text_analysis():
+    """
+    Main function to initialize and run text analysis on all text files.
+    """
     try:
+        # Initialize configuration and process each text file
         config = Config()
         if not os.path.exists(config.reports):
             os.makedirs(config.reports)
@@ -254,4 +310,5 @@ async def azure_text_analysis():
 
 
 if __name__ == '__main__':
+    # Run the main function in an asyncio event loop
     asyncio.run(azure_text_analysis())

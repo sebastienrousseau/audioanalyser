@@ -149,6 +149,7 @@ The minimum supported Python version is 3.6.
 
 - Azure Cognitive Services for speech and text processing.
 - CherryPy for the web server.
+- Open AI Services for summarization.
 - Python's standard libraries including asyncio, sqlite3, and threading.
 
 ![divider][divider]

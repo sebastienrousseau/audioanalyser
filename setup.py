@@ -6,7 +6,7 @@ with open('README.md', 'r', encoding='utf-8') as f:
 
 setup(
     name='audioanalyser',
-    version='0.0.1',
+    version='0.0.2',
     author='Your Name',
     author_email='your.email@example.com',
     description='A Python application for Azure AI Speech to Text service',

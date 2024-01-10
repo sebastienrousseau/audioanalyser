@@ -1,4 +1,4 @@
-# Copyright (C) 2023 Sebastien Rousseau.
+# Copyright (C) 2023-2024 Sebastien Rousseau.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import argparse
 from audioanalyser.modules.azure_speech_to_text import azure_speech_to_text
 from audioanalyser.modules.azure_text_analysis import azure_text_analysis
 from audioanalyser.modules.audio_analyser_server import audio_analyser_server
+from audioanalyser.modules.azure_recommendation import azure_recommendation
 
 
 def main():
@@ -61,6 +62,14 @@ points.
         '''
     )
     parser.add_argument(
+        '-rec',
+        '--recommendation',
+        action='store_true',
+        help='''
+This command generates recommendations based on the specified transcript.
+        '''
+    )
+    parser.add_argument(
         '-s',
         '--server',
         action='store_true',
@@ -77,6 +86,8 @@ server.
         azure_speech_to_text()
     elif args.text_analysis:
         azure_text_analysis()
+    elif args.recommendation:
+        azure_recommendation()
     elif args.server:
         audio_analyser_server()
     else:

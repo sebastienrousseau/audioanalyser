@@ -193,7 +193,7 @@
               </a>
             </li>
             <li class="nav-item">
-              <a class="nav-link" href="pages/tools/index.html">
+              <a class="nav-link" href="/pages/tools/index.html">
                 <span class="menu-title">Tools</span>
                 <i class="mdi mdi-music-circle menu-icon"></i>
               </a>
@@ -212,74 +212,125 @@
                 </ol>
               </nav>
             </div>
+
+            <!-- Row 1 -->
             <div class="row">
               <div class="col-lg-6 grid-margin stretch-card">
-                <div class="card h-100">
+                <div class="card h-auto">
                   <div class="card-body center text-center">
-                    <h2 class="card-title text-start">1) Audio to Text Generation</h2>
-                    <p class="card-description text-start">The Audio-to-Text Service offers a streamlined way to convert your audio files into text. With a simple click, you can initiate the transcription of all your uploaded audio files.</p>
+                    <h2 class="text-start">Audio Recording</h2>
+                    <p class="card-description text-start">The Audio Recording functionality enables users to record and save audio for a specified duration, complete with progress visualization and post-recording file information display.</p>
                     <!-- Automated Transcription Section -->
-                    <button onclick="processAllSpeechToText()" class="btn btn-block btn-lg btn-info mt-4">Process All Audio Files</button>
+                    <button onclick="startRecording()" class="btn btn-block btn-lg fs-6 btn-danger">Record</button>
                     <pre id="speechToTextResults" class="text-success fs-6"></pre>
                   </div>
                 </div>
               </div>
               <div class="col-lg-6 grid-margin stretch-card">
-                <div class="card">
+                <div class="card h-auto">
+                    <div class="card-body center text-center">
+                        <h2 class="text-start">Audio Files List</h2>
+                        <p class="card-description text-start">List of recorded audio files.</p>
+                        <button onclick="listAudioFiles()" class="btn btn-block btn-lg fs-6 btn-danger">Refresh List</button>
+
+                        <!-- Table for Displaying Files -->
+                        <table id="audioFilesTable" class="table mt-4">
+                            <thead>
+                                <tr>
+                                    <th class="text-start">File Name</th>
+                                    <th class="text-start">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody class="text-start">
+                                <!-- File list will be populated here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+              </div>
+            </div>
+            <!-- #End Row 1 -->
+
+            <!-- Row 2 -->
+            <div class="row">
+              <div class="col-lg-6 grid-margin stretch-card">
+                <div class="card h-auto">
                   <div class="card-body center text-center">
-                    <h2 class="card-title text-start">2) Audio Transcripts</h2>
+                    <h2 class="text-start">Audio to Text Generation</h2>
+                    <p class="card-description text-start">The Audio-to-Text Service offers a streamlined way to convert your audio files into text. With a simple click, you can initiate the transcription of all your uploaded audio files.</p>
+                    <!-- Automated Transcription Section -->
+                    <button onclick="processAllSpeechToText()" class="btn btn-block btn-lg fs-6 btn-danger">Process All Audio Files</button>
+                    <pre id="speechToTextResults" class="text-success fs-6"></pre>
+                  </div>
+                </div>
+              </div>
+              <div class="col-lg-6 grid-margin stretch-card">
+                <div class="card h-auto">
+                  <div class="card-body center text-center">
+                    <h2 class="text-start">Audio Transcripts</h2>
                     <p class="card-description text-start">The Transcripts Service is a powerful tool that effortlessly converts speech into text, offering quick and accurate transcriptions in over 100 languages and variants.</p>
-                    <button onclick="showTranscripts()" class="btn btn-block btn-lg btn-info mt-4">Show</button>
-                    <button onclick="hideTranscripts()" class="btn btn-block btn-lg btn-info mt-4">Hide</button>
+                    <button onclick="showTranscripts()" class="btn btn-block btn-lg fs-6 btn-danger">Show</button>
+                    <button onclick="hideTranscripts()" class="btn btn-block btn-lg fs-6 btn-outline-dark">Hide</button>
                     <ul id="transcriptsList" class="text-start"></ul>
                   </div>
                 </div>
               </div>
+            </div>
+            <!-- #End Row 2 -->
+
+            <!-- Row 3 -->
+            <div class="row">
               <div class="col-lg-6 grid-margin stretch-card">
-                <div class="card">
+                <div class="card h-auto">
                   <div class="card-body center text-center">
-                    <h2 class="card-title text-start">3) Sentiment Analysis</h2>
+                    <h2 class="text-start">Sentiment Analysis</h2>
                       <p class="card-description text-start">Decodes emotions in text, labeling sentiments as negative, neutral, or positive with high accuracy.</p>
-                      <button onclick="processAllAnalysis()" class="btn btn-block btn-lg btn-info mt-4">Run</button>
-                      <button onclick="checkAnalysisStatus()" class="btn btn-block btn-lg btn-info mt-4">Status</button>
+                      <button onclick="processAllAnalysis()" class="btn btn-block btn-lg fs-6 btn-danger">Run</button>
+                      <button onclick="checkAnalysisStatus()" class="btn btn-block btn-lg fs-6 btn-outline-dark">Status</button>
                       <pre id="allAnalysisAllResults" class="text-success fs-6"></pre>
                     </div>
                   </div>
                 </div>
-              <div class="col-lg-6 grid-margin stretch-card">
-                <div class="card">
-                  <div class="card-body center text-center">
-                    <h2 class="card-title text-start">4) Sentiment Reports</h2>
-                    <p class="card-description text-start">Interprets and evaluates spoken interactions, delivering insightful and detailed customer sentiment analyses.</p>
-                    <button onclick="showReports()" class="btn btn-block btn-lg btn-info mt-4 mb-4">Show</button>
-                    <button onclick="hideReports()" class="btn btn-block btn-lg btn-info mt-4 mb-4">Hide</button>
-                    <ul id="reportsList" class="text-start"></ul>
+                <div class="col-lg-6 grid-margin stretch-card">
+                  <div class="card h-auto">
+                    <div class="card-body center text-center">
+                      <h2 class="text-start">Sentiment Reports</h2>
+                      <p class="card-description text-start">Interprets and evaluates spoken interactions, delivering insightful and detailed customer sentiment analyses.</p>
+                      <button onclick="showReports()" class="btn btn-block btn-lg fs-6 btn-danger">Show</button>
+                      <button onclick="hideReports()" class="btn btn-block btn-lg fs-6 btn-outline-dark">Hide</button>
+                      <ul id="reportsList" class="text-start"></ul>
+                    </div>
                   </div>
                 </div>
               </div>
-              <div class="col-lg-6 grid-margin stretch-card">
-                <div class="card">
-                  <div class="card-body center text-center">
-                    <h2 class="card-title text-start">5) Generate Summaries</h2>
-                    <p class="card-description text-start">This start the process of generating summaries for all the transcripts.</p>
-                    <button onclick="processAllRecommendations()" class="btn btn-block btn-lg btn-info mt-4 mb-4">Generate</button>
-                    <pre id="allRecommendationsResults" class="text-success fs-6"></pre>
+              <!-- #End Row 3 -->
+
+              <!-- Row 4 -->
+              <div class="row">
+                <div class="col-lg-6 grid-margin stretch-card">
+                  <div class="card h-auto">
+                    <div class="card-body center text-center">
+                      <h2 class="text-start">Generate Summaries</h2>
+                      <p class="card-description text-start">This start the process of generating summaries for all the transcripts.</p>
+                      <button onclick="processAllRecommendations()" class="btn btn-block btn-lg fs-6 btn-danger">Generate</button>
+                      <pre id="allRecommendationsResults" class="text-success fs-6"></pre>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-lg-6 grid-margin stretch-card">
+                  <div class="card h-auto">
+                    <div class="card-body center text-center">
+                      <h2 class="text-start">Executive Summaries</h2>
+                      <p class="card-description text-start">This extract all the information from the generated summaries.</p>
+                      <button onclick="showSummaries()" class="btn btn-block btn-lg fs-6 btn-danger">Show</button>
+                      <button onclick="hideSummaries()" class="btn btn-block btn-lg fs-6 btn-outline-dark">Hide</button>
+                      <ul id="summariesList" class="text-start"></ul>
+                    </div>
                   </div>
                 </div>
               </div>
-              <div class="col-lg-6 grid-margin stretch-card">
-                <div class="card">
-                  <div class="card-body center text-center">
-                    <h2 class="card-title text-start">6) Executive Summaries</h2>
-                    <p class="card-description text-start">This extract all the information from the generated summaries.</p>
-                    <button onclick="showSummaries()" class="btn btn-block btn-lg btn-info mt-4 mb-4">Show</button>
-                    <button onclick="hideSummaries()" class="btn btn-block btn-lg btn-info mt-4 mb-4">Hide</button>
-                    <ul id="summariesList" class="text-start"></ul>
-                  </div>
-                </div>
-              </div>
-            </div>
           </div>
+          <!-- #End Row 4 -->
           <!-- content-wrapper ends -->
           <!-- partial:../../partials/_footer.html -->
           <footer class="footer border-top mt-auto py-3">
@@ -296,8 +347,94 @@
     <!-- container-scroller -->
     <!-- plugins:js -->
     <script src="../../assets/vendors/js/vendor.bundle.base.js"></script>
-    <!-- JavaScript for AJAX Requests -->
+
     <script>
+      /**
+       * Downloads a file from the given path.
+       *
+       * @param {string} fileName - The name of the file to be downloaded.
+       */
+      function downloadFile(fileName) {
+          // Create an anchor element
+          let downloadLink = document.createElement('a');
+  
+          // Set the href attribute to the file's URL
+          downloadLink.href = `/resources/input/${fileName}`;
+  
+          // Optionally, set the download attribute to suggest a filename
+          downloadLink.download = fileName;
+  
+          // Append the link to the body (required for Firefox)
+          document.body.appendChild(downloadLink);
+  
+          // Programmatically click the link to trigger the download
+          downloadLink.click();
+  
+          // Remove the link from the document
+          document.body.removeChild(downloadLink);
+      }
+  
+      /**
+       * Fetches and lists audio files.
+       */
+      function listAudioFiles() {
+          fetch('/list_audio_files', { method: 'GET' })
+          .then(response => {
+              if (!response.ok) {
+                  throw new Error('Network response was not ok');
+              }
+              return response.json();
+          })
+          .then(files => {
+              const tableBody = document.getElementById('audioFilesTable').getElementsByTagName('tbody')[0];
+              tableBody.innerHTML = '';
+
+              files.forEach(file => {
+                  const row = tableBody.insertRow();
+                  const fileNameCell = row.insertCell(0);
+                  fileNameCell.textContent = file.name;
+
+                  const actionCell = row.insertCell(1);
+                  const downloadButton = document.createElement('button');
+                  downloadButton.classList.add('btn', 'btn-sm', 'btn-link');
+                  downloadButton.textContent = 'Download';
+                  downloadButton.onclick = () => downloadFile(file.name);
+                  actionCell.appendChild(downloadButton);
+              });
+          })
+          .catch(error => {
+              console.error('Error:', error);
+              alert('Error fetching file list.');
+          });
+      }
+
+      /**
+       * Hides the transcripts list.
+       */
+      function hideTranscripts() {
+          const container = document.getElementById('transcriptsList');
+          container.innerHTML = ''; // Clear the transcript list
+      }
+
+      /**
+       * Hides the reports list.
+       */
+      function hideReports() {
+          const container = document.getElementById('reportsList');
+          container.innerHTML = ''; // Clear the report list
+      }
+
+      /**
+       * Hides the summaries list.
+       */
+      function hideSummaries() {
+          const container = document.getElementById('summariesList');
+          container.innerHTML = ''; // Clear the summaries list
+      }
+
+      /**
+       * Processes all speech to text.
+       */
       function processAllSpeechToText() {
           fetch('/process_all_speech_to_text', {
               method: 'GET'
@@ -318,6 +455,9 @@
           });
       }
 
+      /**
+       * Processes all text analysis.
+       */
       async function processAllAnalysis() {
           console.log("processAllAnalysis() called");
           try {
@@ -338,6 +478,9 @@
           }
       }
 
+      /**
+       * Processes all recommendations.
+       */
       async function processAllRecommendations() {
           try {
               const response = await fetch('/generate_recommendations', {
@@ -357,54 +500,58 @@
           }
       }
 
+      /**
+       * Shows transcripts.
+       */
       function showTranscripts() {
-        fetch('/get_transcripts_list', {
-          method: 'GET'
-        })
-        .then(response => {
-          if (!response.ok) {
-            throw new Error('Network response was not ok');
-          }
-          return response.json();
-        })
-        .then(files => {
-          // Sort the files array by filename alphabetically
-          files.sort((a, b) => a.filename.localeCompare(b.filename));
+          fetch('/get_transcripts_list', {
+              method: 'GET'
+          })
+          .then(response => {
+              if (!response.ok) {
+                  throw new Error('Network response was not ok');
+              }
+              return response.json();
+          })
+          .then(files => {
+              // Sort the files array by filename alphabetically
+              files.sort((a, b) => a.filename.localeCompare(b.filename));
 
-          const container = document.getElementById('transcriptsList');
-          container.innerHTML = '';
+              const container = document.getElementById('transcriptsList');
+              container.innerHTML = '';
 
-          files.forEach(file => {
-            const transcriptText = file.content;
-            const filename = file.filename;
+              files.forEach(file => {
+                  const transcriptText = file.content;
+                  const filename = file.filename;
 
-            // Create elements for the filename and transcript content
-            const listItem = document.createElement('div');
-            listItem.classList.add('border', 'p-3', 'mb-3'); // Bootstrap 5 classes for border, padding, and margin-bottom
+                  // Create elements for the filename and transcript content
+                  const listItem = document.createElement('div');
+                  listItem.classList.add('border', 'p-3', 'mb-3'); // Bootstrap 5 classes for border, padding, and margin-bottom
 
-            const filenameHeader = document.createElement('strong');
-            filenameHeader.textContent = `File: ${filename}`;
+                  const filenameHeader = document.createElement('strong');
+                  filenameHeader.textContent = `File: ${filename}`;
 
-            const transcriptDiv = document.createElement('div');
-            transcriptDiv.innerHTML = transcriptText.replace(/\n/g, '<br>'); // Replace line breaks with <br>
+                  const transcriptDiv = document.createElement('div');
+                  transcriptDiv.innerHTML = transcriptText.replace(/\n/g, '<br>'); // Replace line breaks with <br>
 
-            listItem.appendChild(filenameHeader);
-            listItem.appendChild(transcriptDiv);
-            container.appendChild(listItem);
+                  listItem.appendChild(filenameHeader);
+                  listItem.appendChild(transcriptDiv);
+                  container.appendChild(listItem);
 
-            // Create and append an <hr> element
-            const hrElement = document.createElement('hr');
-            container.appendChild(hrElement);
+                  // Create and append an <hr> element
+                  const hrElement = document.createElement('hr');
+                  container.appendChild(hrElement);
+              });
+          })
+          .catch(error => {
+              console.error('Error:', error);
+              alert('Error fetching or displaying transcripts.');
           });
-        })
-        .catch(error => {
-          console.error('Error:', error);
-          alert('Error fetching or displaying transcripts.');
-        });
       }
 
-
-
+      /**
+       * Checks the analysis status.
+       */
       async function checkAnalysisStatus() {
           try {
               const statusElement = document.getElementById('allAnalysisAllResults');
@@ -434,121 +581,154 @@
           }
       }
 
+      /**
+       * Shows reports.
+       */
       function showReports() {
-  fetch('/get_reports_list', {
-    method: 'GET'
-  })
-  .then(response => {
-    if (!response.ok) {
-      throw new Error('Network response was not ok');
-    }
-    return response.json();
-  })
-  .then(files => {
-    // Sort the files array by filename alphabetically
-    files.sort((a, b) => a.filename.localeCompare(b.filename));
+          fetch('/get_reports_list', {
+              method: 'GET'
+          })
+          .then(response => {
+              if (!response.ok) {
+                  throw new Error('Network response was not ok');
+              }
+              return response.json();
+          })
+          .then(files => {
+              // Sort the files array by filename alphabetically
+              files.sort((a, b) => a.filename.localeCompare(b.filename));
 
-    const container = document.getElementById('reportsList');
-    container.innerHTML = '';
+              const container = document.getElementById('reportsList');
+              container.innerHTML = '';
 
-    files.forEach(file => {
-      const reportText = file.content;
-      const filename = file.filename;
+              files.forEach(file => {
+                  const reportText = file.content;
+                  const filename = file.filename;
 
-      // Create elements for the filename and report content
-      const listItem = document.createElement('div'); // Change 'p' to 'div' for a block-level element
-      listItem.classList.add('border', 'p-3', 'mb-3');
+                  // Create elements for the filename and report content
+                  const listItem = document.createElement('div'); // Change 'p' to 'div' for a block-level element
+                  listItem.classList.add('border', 'p-3', 'mb-3');
 
-      const filenameHeader = document.createElement('strong');
-      filenameHeader.textContent = `Report: ${filename}`;
+                  const filenameHeader = document.createElement('strong');
+                  filenameHeader.textContent = `Report: ${filename}`;
 
-      const reportDiv = document.createElement('div');
-      reportDiv.classList.add('report-content');
-      reportDiv.innerHTML = reportText.replace(/\n/g, '<br>'); // Replace line breaks with <br>
+                  const reportDiv = document.createElement('div');
+                  reportDiv.classList.add('report-content');
+                  reportDiv.innerHTML = reportText.replace(/\n/g, '<br>'); // Replace line breaks with <br>
 
-      listItem.appendChild(filenameHeader);
-      listItem.appendChild(reportDiv);
-      container.appendChild(listItem);
+                  listItem.appendChild(filenameHeader);
+                  listItem.appendChild(reportDiv);
+                  container.appendChild(listItem);
 
-      // Create and append an <hr> element
-      const hrElement = document.createElement('hr');
-      container.appendChild(hrElement);
-    });
-  })
-  .catch(error => {
-    console.error('Error:', error);
-    alert('Error fetching or displaying reports.');
-  });
-}
-
-function showSummaries() {
-  fetch('/get_summaries_list', {  // Make sure to use the correct endpoint here
-    method: 'GET'
-  })
-  .then(response => {
-    if (!response.ok) {
-      throw new Error('Network response was not ok');
-    }
-    return response.json();
-  })
-  .then(files => {
-    // Sort the files array by filename alphabetically
-    files.sort((a, b) => a.filename.localeCompare(b.filename));
-
-    const container = document.getElementById('summariesList');  // Ensure this is the correct container ID
-    container.innerHTML = '';
-
-    files.forEach(file => {
-      const summaryText = file.content;  // Assuming each file has 'content' property
-      const filename = file.filename;
-
-      // Create elements for the filename and summary content
-      const listItem = document.createElement('div');
-      listItem.classList.add('border', 'p-3', 'mb-3');
-
-      const filenameHeader = document.createElement('strong');
-      filenameHeader.textContent = `Summary: ${filename}`;
-
-      const summaryDiv = document.createElement('div');
-      summaryDiv.classList.add('summary-content');
-      summaryDiv.innerHTML = summaryText.replace(/\n/g, '<br>'); // Replace line breaks with <br>
-
-      listItem.appendChild(filenameHeader);
-      listItem.appendChild(summaryDiv);
-      container.appendChild(listItem);
-
-      // Create and append an <hr> element if needed
-      const hrElement = document.createElement('hr');
-      container.appendChild(hrElement);
-    });
-  })
-  .catch(error => {
-    console.error('Error:', error);
-    alert('Error fetching or displaying summaries.');
-  });
-}
-
-
-
-
-      // Function to hide transcripts
-      function hideTranscripts() {
-          const container = document.getElementById('transcriptsList');
-          container.innerHTML = ''; // Clear the transcript list
+                  // Create and append an <hr> element
+                  const hrElement = document.createElement('hr');
+                  container.appendChild(hrElement);
+              });
+          })
+          .catch(error => {
+              console.error('Error:', error);
+              alert('Error fetching or displaying reports.');
+          });
       }
-      // Function to hide reports
-      function hideReports() {
-        const container = document.getElementById('reportsList');
-        container.innerHTML = ''; // Clear the report list
-      }
-      // Function to hide summaries
-      function hideSummaries() {
-        const container = document.getElementById('summariesList');
-        container.innerHTML = ''; // Clear the summaries list
-      }
-    </script>
 
+      /**
+       * Shows summaries.
+       */
+      function showSummaries() {
+          fetch('/get_summaries_list', {  // Make sure to use the correct endpoint here
+              method: 'GET'
+          })
+          .then(response => {
+              if (!response.ok) {
+                  throw new Error('Network response was not ok');
+              }
+              return response.json();
+          })
+          .then(files => {
+              // Sort the files array by filename alphabetically
+              files.sort((a, b) => a.filename.localeCompare(b.filename));
+
+              const container = document.getElementById('summariesList');  // Ensure this is the correct container ID
+              container.innerHTML = '';
+
+              files.forEach(file => {
+                  const summaryText = file.content;  // Assuming each file has 'content' property
+                  const filename = file.filename;
+
+                  // Create elements for the filename and summary content
+                  const listItem = document.createElement('div');
+                  listItem.classList.add('border', 'p-3', 'mb-3');
+
+                  const filenameHeader = document.createElement('strong');
+                  filenameHeader.textContent = `Summary: ${filename}`;
+
+                  const summaryDiv = document.createElement('div');
+                  summaryDiv.classList.add('summary-content');
+                  summaryDiv.innerHTML = summaryText.replace(/\n/g, '<br>'); // Replace line breaks with <br>
+
+                  listItem.appendChild(filenameHeader);
+                  listItem.appendChild(summaryDiv);
+                  container.appendChild(listItem);
+
+                  // Create and append an <hr> element if needed
+                  const hrElement = document.createElement('hr');
+                  container.appendChild(hrElement);
+              });
+          })
+          .catch(error => {
+              console.error('Error:', error);
+              alert('Error fetching or displaying summaries.');
+          });
+      }
+
+      /**
+       * Starts recording audio.
+       */
+      function startRecording() {
+          // Display a message indicating that recording has started
+          const recordingInfo = document.getElementById('speechToTextResults');
+          recordingInfo.innerHTML = '<p>Recording has started...</p><div id="progressBar" style="width:0%; height: 20px; background-color: #4CAF50;"></div>';
+
+          // Start expanding the progress bar to indicate ongoing recording
+          const progressBar = document.getElementById('progressBar');
+          let width = 0;
+          const progressInterval = setInterval(() => {
+              if (width >= 100) {
+                  clearInterval(progressInterval);
+              } else {
+                  width++;
+                  progressBar.style.width = width + '%';
+              }
+          }, 100); // Update progress bar width every 100ms
+
+          fetch('/record_audio', { method: 'POST' })
+          .then(response => {
+              if (!response.ok) {
+                  clearInterval(progressInterval); // Stop progress bar if there's an error
+                  throw new Error('Network response was not ok');
+              }
+              return response.json();
+          })
+          .then(data => {
+              clearInterval(progressInterval); // Stop progress bar on completion
+              console.log('Recording completed:', data);
+              recordingInfo.innerHTML = `Recording saved at:\n"${data.recorded_file}"`;
+              listAudioFiles();
+          })
+          .catch(error => {
+              clearInterval(progressInterval); // Stop progress bar on error
+              console.error('Error:', error);
+              alert('Error starting or processing recording.');
+          });
+      }
+
+      window.onload = function() {
+          listAudioFiles()
+      };
   </script>
+  <!-- End JavaScript for AJAX Requests -->
+
+
     <!-- endinject -->
     <!-- Plugin js for this page -->
     <!-- End plugin js for this page -->

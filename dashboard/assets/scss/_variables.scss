@@ -57,22 +57,22 @@ $colors: (
   $black: #000000;
 
 $theme-colors: (
-  primary: #b66dff,
+  primary: #06c,
   secondary: #c3bdbd,
   success: #1bcfb4,
   info: #198ae3,
   warning: #fed713,
-  danger: #fe7c96,
+  danger: #da0010,
   light: #f8f9fa,
   dark: #3e4b5b
   );
 
-  $primary: #b66dff;
+  $primary: #06c;
   $secondary: #c3bdbd;
   $success: #1bcfb4;
   $info: #198ae3;
   $warning: #fed713;
-  $danger: #fe7c96;
+  $danger: #da0010;
   $light: #f8f9fa;
   $dark: #3e4b5b;
 
@@ -89,7 +89,7 @@ dark: linear-gradient(89deg, #5e7188, #3e4b5b));
 ////////// COLOR SYSTEM //////////
 
 ////////// COLOR VARIABLES //////////
-$content-bg: #f2edf3;
+$content-bg: #f4f5f6;
 $footer-bg: $content-bg;
 $footer-color: color(dark);
 $border-color: #ebedf2;
@@ -329,7 +329,7 @@ $chat-container-height:100%s;
 $text-gray:gray;
 $bullet-line-list-shape-bg: color(white) !default;
 $arrow-color: $white;
-$tab-head-bg: darken(#f2edf3, 2%);
+$tab-head-bg: darken(#f4f5f6, 2%);
 $accordian-shadow-color:rgba(230, 234, 236, 0.35);
 $landing-bg:#1a142dfa;
 $private-btn-bg:#eae2ec;
@@ -367,7 +367,7 @@ $sidebar-light-menu-hover-color: darken($sidebar-light-menu-color, 10%);
 $sidebar-light-submenu-hover-color: darken($sidebar-light-submenu-color, 20%);
 $sidebar-light-menu-icon-color: #bba8bff5;
 $sidebar-light-menu-arrow-color: #9e9da0;
-$sidebar-light-menu-border-color: #f2edf3;
+$sidebar-light-menu-border-color: #f4f5f6;
 
 $sidebar-menu-font-size: $default-font-size;
 $sidebar-menu-padding-y: 1.125rem;

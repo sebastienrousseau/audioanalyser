@@ -1,4 +1,4 @@
-# Basic Makefile for AzureSpeechToText Application
+# Basic Makefile for AudioAnalyser Application
 
 # Copyright (C) 2023-2024 Sebastien Rousseau.
 #
@@ -22,7 +22,7 @@ install:
     pip install -r requirements.txt
 
 run:
-    python speech_to_text.py
+    python -m audioanalyser
 
 clean:
     rm -rf __pycache__

@@ -26,8 +26,9 @@ their code.
 import argparse
 from audioanalyser.modules.azure_speech_to_text import azure_speech_to_text
 from audioanalyser.modules.azure_text_analysis import azure_text_analysis
-from audioanalyser.modules.audio_analyser_server import audio_analyser_server
+from audioanalyser.modules.server import audio_analyser_server
 from audioanalyser.modules.azure_recommendation import azure_recommendation
+from audioanalyser.modules.audio_recorder import audio_recorder
 
 
 def main():
@@ -62,11 +63,19 @@ points.
         '''
     )
     parser.add_argument(
-        '-rec',
-        '--recommendation',
+        '-sum',
+        '--summary',
         action='store_true',
         help='''
-This command generates recommendations based on the specified transcript.
+This command generates summaries based on the specified transcript.
+        '''
+    )
+    parser.add_argument(
+        '-rec',
+        '--record',
+        action='store_true',
+        help='''
+This command records audio from the microphone and saves it as a WAV file.
         '''
     )
     parser.add_argument(
@@ -86,10 +95,12 @@ server.
         azure_speech_to_text()
     elif args.text_analysis:
         azure_text_analysis()
-    elif args.recommendation:
+    elif args.summary:
         azure_recommendation()
     elif args.server:
         audio_analyser_server()
+    elif args.record:
+        audio_recorder()
     else:
         parser.print_help()
 

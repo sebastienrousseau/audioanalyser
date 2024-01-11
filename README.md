@@ -34,6 +34,8 @@ width="261"
 
 ## Overview
 
+Audio Analyser is a cutting-edge application designed to transform audio recordings into actionable insights using Microsoft Azure AI. It offers advanced capabilities such as audio recording, speech-to-text conversion, and in-depth text analysis, providing users with comprehensive and insightful reports.
+
 ### Discover Hidden Insights in Minutes: AI-Powered Audio Analysis for Your Call Recordings
 
 #### Streamline call recording and audio file transcription, uncover actionable insights in seconds with advanced text analysis, powered by Microsoft Azure AI services
@@ -45,10 +47,11 @@ width="261"
 
 ## Key Features
 
+- **Audio Recording**: Record audio files and conversations.
 - **Speech to Text**: Convert spoken language into text using Azure's speech-to-text service.
+- **Instant Transcription:** Instantly transcribe audio files and recordings into text.
 - **Text Analysis**: Analyze text for various features using Azure's text analytics service.
-- **Instant Transcription:**
-  - Instantly transcribe audio files and recordings into text.
+- **Recommendations:** Get actionable recommendations based on the results of the analysis.
 - **Support for outputting results in different formats**, including JSON, TXT and SQLite.
 - **Actionable Insights:**
   - Analyze text for various features, including Overall Sentiment, Positive/Negative Sentiment Analysis,  Identify Key Topics and Entities, Language, Personally Identifiable Information (PII).
@@ -73,6 +76,7 @@ width="261"
 - CherryPy
 - Azure Cognitive Services Speech SDK
 - Azure AI Text Analytics
+- Azure Open AI Services
 - Python standard libraries: asyncio, threading, logging, sqlite3, json
 - Dotenv for environment variable management
 

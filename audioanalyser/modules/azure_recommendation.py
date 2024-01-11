@@ -13,9 +13,28 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import openai  # Import the OpenAI library
+"""
+This script uses the OpenAI API to generate recommendations for Azure based on
+customer transcripts.
+
+The script takes the following environment variables:
+
+GPT3_API_KEY: Your OpenAI API key
+TRANSCRIPTS_FOLDER: The folder containing the customer transcripts
+RECOMMENDATIONS_FOLDER: The folder where the recommendations will be saved
+
+The script does the following:
+
+1. Reads the transcript files from the TRANSCRIPTS_FOLDER
+2. Generates a recommendation for each transcript using the OpenAI API
+3. Saves the recommendations to the RECOMMENDATIONS_FOLDER
+"""
+
+# Import the dependencies
+import openai
 import os
 import logging
+import uuid
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
@@ -30,6 +49,10 @@ logger = logging.getLogger('AzureRecommendations')
 
 
 class Config:
+    """
+    Configuration class for the script. Reads the environment variables and
+    validates their presence.
+    """
     def __init__(self):
         self.GPT3_API_KEY = os.getenv('GPT3_API_KEY')
         self.TRANSCRIPTS_FOLDER = os.getenv('TRANSCRIPTS_FOLDER')
@@ -37,6 +60,9 @@ class Config:
         self.validate()
 
     def validate(self):
+        """
+        Validates that the required environment variables are present.
+        """
         required_vars = [
             self.GPT3_API_KEY,
             self.TRANSCRIPTS_FOLDER,
@@ -54,10 +80,18 @@ class Config:
 
 
 class RecommendationsGenerator:
+    """
+    Class for generating recommendations. Reads the transcript files and
+    generates recommendations for each one.
+    """
     def __init__(self, config):
         self.config = config
 
     def generate_recommendations(self):
+        """
+        Generates recommendations for all the transcript files in the
+        TRANSCRIPTS_FOLDER.
+        """
         # Create the output recommendations folder if it doesn't exist
         os.makedirs(self.config.RECOMMENDATIONS_FOLDER, exist_ok=True)
 
@@ -89,7 +123,9 @@ class RecommendationsGenerator:
                 print(recommendation_text)
 
     def generate_recommendation(self, input_text):
-
+        """
+        Generates a recommendation for a given transcript.
+        """
         # Replace with your GPT-3 API key
         api_key = self.config.GPT3_API_KEY
 
@@ -98,13 +134,37 @@ class RecommendationsGenerator:
 
         # Example prompt for generating a recommendation
         prompt = """
-    Provide a recommendation based on the following transcripts:\n"""
+Summarize key insights from the provided transcripts in a concise executive
+summary (10-15% of original length), suitable for senior banking and finance
+leaders. The summary should be formatted for ease of comprehension, neutral,
+objective, and fact-based. Avoid subjective language or tone.
 
+- Briefly mention the source (e.g., customer calls, market research) and
+objectives of the discussion/research.
+- Organize the summary with clear section headings such as 'Key Findings',
+'Trends', and 'Strategic Recommendations'.
+- Include 3-5 bullet points for crucial findings, 2-3 sentences for trends,
+etc.
+- Prioritize the most crucial, actionable findings in short, focused bullet
+points.
+- Highlight important trends in 1-2 brief summary sentences.
+- Provide forward-looking strategic recommendations focused on improving
+customer satisfaction.
+- Separate each main insight/finding/recommendation with line breaks.
+- Use clear, industry-specific business language appropriate for senior
+executives in banking and finance.
+"""
+
+        conversation_id = str(uuid.uuid4())
+        logger.info(f"Conversation ID: {conversation_id}")
         # Generate text for the input transcript
         response = openai.Completion.create(
             engine="gpt-3.5-turbo-instruct",
-            prompt=f"{prompt}{input_text}\n",
-            max_tokens=1000
+            prompt=f"{conversation_id}\n{prompt}{input_text}\n",
+            temperature=0.8,
+            max_tokens=1024,
+            n=1,
+            stop=None,
         )
 
         generated_text = response.choices[0].text.strip()
@@ -112,6 +172,10 @@ class RecommendationsGenerator:
 
 
 def azure_recommendation():
+    """
+    Main function for the script. Reads the configuration and calls the
+    recommendation generation function.
+    """
     try:
         config = Config()
 

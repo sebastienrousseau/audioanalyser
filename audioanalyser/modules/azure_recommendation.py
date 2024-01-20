@@ -9,8 +9,7 @@
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
-# implied.
-# See the License for the specific language governing permissions and
+# implied. See the License for the specific language governing permissions and
 # limitations under the License.
 
 """
@@ -22,6 +21,11 @@ The script takes the following environment variables:
 GPT3_API_KEY: Your OpenAI API key
 TRANSCRIPTS_FOLDER: The folder containing the customer transcripts
 RECOMMENDATIONS_FOLDER: The folder where the recommendations will be saved
+PROMPT_STRATEGY: The strategy for generating prompts (default: 'default')
+PROMPT_LENGTH_RATIO: The ratio of prompt length to total tokens (default: 0.1)
+OUTPUT_TONE: The desired tone of the generated recommendations (default: 'neutral')
+MAX_OUTPUT_LENGTH: The maximum desired length of the generated recommendations in tokens (default: 200)
+OUTPUT_VOICE: The desired voice for the generated recommendations (default: 'neutral')
 
 The script does the following:
 
@@ -57,11 +61,17 @@ class Config:
         self.GPT3_API_KEY = os.getenv('GPT3_API_KEY')
         self.TRANSCRIPTS_FOLDER = os.getenv('TRANSCRIPTS_FOLDER')
         self.RECOMMENDATIONS_FOLDER = os.getenv('RECOMMENDATIONS_FOLDER')
+        self.PROMPT_STRATEGY = os.getenv('PROMPT_STRATEGY', 'default')
+        self.PROMPT_LENGTH_RATIO = float(os.getenv('PROMPT_LENGTH_RATIO', 0.1))
+        self.OUTPUT_TONE = os.getenv('OUTPUT_TONE', 'neutral')
+        self.MAX_OUTPUT_LENGTH = int(os.getenv('MAX_OUTPUT_LENGTH', 2048))
+        self.OUTPUT_VOICE = os.getenv('OUTPUT_VOICE', 'neutral')
         self.validate()
 
     def validate(self):
         """
-        Validates that the required environment variables are present.
+        Validates that the required environment variables are present and within
+        expected ranges.
         """
         required_vars = [
             self.GPT3_API_KEY,
@@ -77,6 +87,14 @@ class Config:
                 f"Missing environment variables: {', '.join(missing)}"
             )
             raise EnvironmentError("Missing required environment variables.")
+        
+        # Validate PROMPT_LENGTH_RATIO is within a reasonable range
+        if not 0 < self.PROMPT_LENGTH_RATIO <= 1:
+            raise ValueError("PROMPT_LENGTH_RATIO should be between 0 and 1.")
+
+        # Validate MAX_OUTPUT_LENGTH is a positive integer
+        if self.MAX_OUTPUT_LENGTH <= 0:
+            raise ValueError("MAX_OUTPUT_LENGTH should be a positive integer.")
 
 
 class RecommendationsGenerator:
@@ -132,16 +150,45 @@ class RecommendationsGenerator:
         # Initialize the OpenAI API client
         openai.api_key = api_key
 
+        # Calculate prompt length based on strategy
+        total_tokens = len(input_text.split())
+        if self.config.PROMPT_STRATEGY == 'default':
+            prompt_length = max(1, int(total_tokens * self.config.PROMPT_LENGTH_RATIO))
+        elif self.config.PROMPT_STRATEGY == 'fixed':
+            prompt_length = min(self.config.MAX_OUTPUT_LENGTH, total_tokens)
+        else:
+            raise ValueError("Invalid PROMPT_STRATEGY value. Use 'default' or 'fixed'.")
+
+        # Determine output tone
+        if self.config.OUTPUT_TONE == 'neutral':
+            tone_prompt = ''
+        elif self.config.OUTPUT_TONE == 'formal':
+            tone_prompt = 'Formal tone:\n\n'
+        elif self.config.OUTPUT_TONE == 'casual':
+            tone_prompt = 'Casual tone:\n\n'
+        else:
+            raise ValueError("Invalid OUTPUT_TONE value. Use 'neutral', 'formal', or 'casual'.")
+
+        # Determine output voice
+        if self.config.OUTPUT_VOICE == 'neutral':
+            voice_prompt = ''
+        elif self.config.OUTPUT_VOICE == 'professional':
+            voice_prompt = 'Professional voice:\n\n'
+        elif self.config.OUTPUT_VOICE == 'friendly':
+            voice_prompt = 'Friendly voice:\n\n'
+        else:
+            raise ValueError("Invalid OUTPUT_VOICE value. Use 'neutral', 'professional', or 'friendly'.")
+
         # Example prompt for generating a recommendation
-        prompt = """
-Summarize key insights from the provided transcripts in a concise executive
-summary (10-15% of original length), suitable for senior banking and finance
-leaders. The summary should be formatted for ease of comprehension, neutral,
+        prompt = f"""
+{tone_prompt}{voice_prompt}Summarize key insights from the provided transcripts in a concise executive
+summary ({prompt_length} tokens), suitable for senior banking and finance
+leaders. The summary should be clear and comprehensible, neutral,
 objective, and fact-based. Avoid subjective language or tone.
 
 - Briefly mention the source (e.g., customer calls, market research) and
 objectives of the discussion/research.
-- Organize the summary with clear section headings such as 'Key Findings',
+- Organize the summary with clear section headings such as 'Categories', 'Key Findings',
 'Trends', and 'Strategic Recommendations'.
 - Include 3-5 bullet points for crucial findings, 2-3 sentences for trends,
 etc.
@@ -162,7 +209,7 @@ executives in banking and finance.
             engine="gpt-3.5-turbo-instruct",
             prompt=f"{conversation_id}\n{prompt}{input_text}\n",
             temperature=0.8,
-            max_tokens=1024,
+            max_tokens=self.config.MAX_OUTPUT_LENGTH,
             n=1,
             stop=None,
         )

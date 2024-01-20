@@ -72,6 +72,7 @@ class Config:
     Handles configuration and environment validation.
     Ensures audio recording environment is set up correctly.
     """
+
     def __init__(self, settings):
         self.settings = settings
         self.validate_directory(self.settings['INPUT_FOLDER'])
@@ -103,6 +104,7 @@ class AudioRecorder:
     Manages the audio recording process, including stream handling and file
     output.
     """
+
     def __init__(self, config):
         """
         Args:
@@ -197,7 +199,13 @@ class AudioRecorder:
         self.is_recording = False
 
 
-def audio_recorder():
+def audio_recorder() -> str:
+    """
+    Main function to start audio recording.
+
+    Returns:
+        str: The path to the recorded audio file.
+    """
     try:
         config = Config(AUDIO_SETTINGS)
         recorder = AudioRecorder(config)

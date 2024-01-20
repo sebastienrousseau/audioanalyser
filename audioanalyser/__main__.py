@@ -24,18 +24,20 @@ their code.
 
 
 import argparse
-from audioanalyser.modules.azure_speech_to_text import azure_speech_to_text
-from audioanalyser.modules.azure_text_analysis import azure_text_analysis
-from audioanalyser.modules.server import audio_analyser_server
-from audioanalyser.modules.azure_recommendation import azure_recommendation
+import asyncio
+from audioanalyser.modules.analyze_text_files import analyze_text_files
 from audioanalyser.modules.audio_recorder import audio_recorder
+from audioanalyser.modules.azure_recommendation import azure_recommendation
+from audioanalyser.modules.speech_text_server import speech_text_server
+from audioanalyser.modules.transcribe_audio_files import transcribe_audio_files
 
 
-def main():
+async def main():
     parser = argparse.ArgumentParser(
         prog='audioanalyser',
         description='Audio Analyser CLI'
     )
+
     parser.add_argument(
         '-stt',
         '--speech_to_text',
@@ -49,6 +51,7 @@ transcriptions are also stored in a SQLite database.
 Ideal for transcribing lectures, meetings, or interviews.
         '''
     )
+
     parser.add_argument(
         '-ta',
         '--text_analysis',
@@ -62,6 +65,7 @@ Suitable for analysing transcripts for insights and important data
 points.
         '''
     )
+
     parser.add_argument(
         '-sum',
         '--summary',
@@ -70,6 +74,7 @@ points.
 This command generates summaries based on the specified transcript.
         '''
     )
+
     parser.add_argument(
         '-rec',
         '--record',
@@ -78,6 +83,7 @@ This command generates summaries based on the specified transcript.
 This command records audio from the microphone and saves it as a WAV file.
         '''
     )
+
     parser.add_argument(
         '-s',
         '--server',
@@ -89,21 +95,33 @@ and generating reports. It also provides a REST API for interacting with the
 server.
         '''
     )
+    parser.add_argument(
+        'files',
+        nargs='*',
+        help='File paths to process'
+    )
 
     args = parser.parse_args()
-    if args.speech_to_text:
-        azure_speech_to_text()
-    elif args.text_analysis:
-        azure_text_analysis()
-    elif args.summary:
-        azure_recommendation()
-    elif args.server:
-        audio_analyser_server()
-    elif args.record:
-        audio_recorder()
-    else:
-        parser.print_help()
+
+    try:
+        if args.speech_to_text:
+            transcribe_audio_files(args.files[0])
+        elif args.text_analysis:
+            if 'files' in args:
+                await analyze_text_files(args.files)
+            else:
+                await analyze_text_files()
+        elif args.summary:
+            azure_recommendation()
+        elif args.server:
+            speech_text_server()
+        elif args.record:
+            audio_recorder()
+        else:
+            parser.print_help()
+    except Exception as e:
+        print(f"An error occurred: {e}")
 
 
 if __name__ == '__main__':
-    main()
+    asyncio.run(main())

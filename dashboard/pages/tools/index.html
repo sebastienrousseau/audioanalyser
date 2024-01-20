@@ -222,7 +222,7 @@
                     <p class="card-description text-start">The Audio Recording functionality enables users to record and save audio for a specified duration, complete with progress visualization and post-recording file information display.</p>
                     <!-- Automated Transcription Section -->
                     <button onclick="startRecording()" class="btn btn-block btn-lg fs-6 btn-danger">Record</button>
-                    <pre id="speechToTextResults" class="text-success fs-6"></pre>
+                    <pre id="audioRecording" class="text-success fs-6"></pre>
                   </div>
                 </div>
               </div>
@@ -686,7 +686,7 @@
        */
       function startRecording() {
           // Display a message indicating that recording has started
-          const recordingInfo = document.getElementById('speechToTextResults');
+          const recordingInfo = document.getElementById('audioRecording');
           recordingInfo.innerHTML = '<p>Recording has started...</p><div id="progressBar" style="width:0%; height: 20px; background-color: #4CAF50;"></div>';
 
           // Start expanding the progress bar to indicate ongoing recording

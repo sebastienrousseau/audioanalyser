@@ -28,7 +28,7 @@ setup(
     author="Sebastien Rousseau",
     author_email="sebastian.rousseau@gmail.com",
     description="""
-        Audio Analyser Pro: Transform call recordings into actionable insights
+        Audio Analyser: Transform call recordings into actionable insights
         using Microsoft Azure AI. Advanced transcription and analysis for
         insightful reports.
     """,
@@ -36,7 +36,7 @@ setup(
     long_description_content_type="text/markdown",
     license="Apache Software License",
     name='audioanalyser',
-    version='0.0.3',
+    version='0.0.4',
     url='https://audioanalyser.pro',
     packages=find_packages(),
     install_requires=[

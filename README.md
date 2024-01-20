@@ -1,4 +1,3 @@
-
 <!-- markdownlint-disable MD033 MD041 -->
 
 <img
@@ -11,7 +10,7 @@ width="261"
 
 <!-- markdownlint-enable MD033 MD041 -->
 
-# Audio Analyser: Speech-to-Text & Analysis 🎙️
+# Audio Analyser: Speech-to-Text & Analysis
 
 ![Audio Analyser banner][banner]
 
@@ -34,12 +33,11 @@ width="261"
 
 ## Overview
 
-Audio Analyser is a cutting-edge application designed to transform audio recordings into actionable insights using Microsoft Azure AI. It offers advanced capabilities such as audio recording, speech-to-text conversion, and in-depth text analysis, providing users with comprehensive and insightful reports.
+**Audio Analyser** leverages the power of Microsoft Azure's advanced AI services to transform your audio data into valuable insight reports in no time through automatic speech-to-text, text analysis, and recommendations.
 
-### Discover Hidden Insights in Minutes: AI-Powered Audio Analysis for Your Call Recordings
-
-#### Streamline call recording and audio file transcription, uncover actionable insights in seconds with advanced text analysis, powered by Microsoft Azure AI services
-
+- **Solve the pain of manual audio analysis:** Manually analyzing audio is time consuming and limited. Audio Analyser automates the process, quickly surfacing key insights through AI-powered speech and language processing.
+- **Discover Hidden Insights in Minutes**: AI-Powered Audio Analysis for Your Call Recordings and Audio Files.
+- **Streamline call recording and audio file transcription**, uncover actionable insights in seconds with advanced text analysis, powered by Microsoft Azure AI services
 - **Go beyond simple transcription:** Discover sentiment, key information, and gain a multi-faceted understanding of your conversations through in-depth analysis and comprehensive reports.
 - **Audio Analyser** leverages the power of Azure's advanced AI services to transform your audio data into valuable insight reports in no time.
 
@@ -83,6 +81,14 @@ Audio Analyser is a cutting-edge application designed to transform audio recordi
 ![divider][divider]
 
 ## Installation
+
+Audio Analyser is built on Azure Cognitive Services for speech and language processing, with a CherryPy web server frontend. Key components include:
+
+- **Audio Recorder** - record audio clips
+- **Speech-to-Text** - transcribe audio
+- **Text Analytics** - analyze transcripts
+- **Recommendation Generator** - suggest actions
+- **Web Server** - handle API requests
 
 ### Create a Virtual Environment
 
@@ -162,6 +168,71 @@ The minimum supported Python version is 3.6.
 
 Ensure that your Azure credentials and other configurations are correctly set in a `.env` file in the root directory.
 Please refer to the `env.example` file for the required environment variables.
+
+![divider][divider]
+
+## Modules
+
+### Audio Recorder Module
+
+This module is designed for audio recording. It includes the `audio_recorder` main function, which initiates the audio recording process, leveraging the `Config` class for loading settings from a `.env` file and the `AudioRecorder` class for managing the recording process.
+
+#### Functionality
+
+- Ensures the audio recording environment is correctly set up.
+- Validates input and output directories.
+- Validates audio settings.
+- Generates output file paths for recorded audio.
+
+### Analyze Text Files Module
+
+This module is designed for analyzing text files using Azure Text Analytics. It leverages the `Config` class for setting up the environment and the `TextAnalysis` class for performing and managing text analytics.
+
+#### Functionality
+
+- **Config Class:**
+  - Sets up environment variables for Azure Language services.
+  - Validates the presence of required environment variables for analysis.
+
+- **TextAnalysis Class:**
+  - Performs text analytics tasks, such as sentiment analysis and entity recognition.
+  - Processes text for analysis, including handling associated filenames.
+  - Saves analysis results in various formats.
+
+- **Main Function:**
+  - Runs text analysis on text files in a specified directory.
+
+### Azure Recommendation Module
+
+This module automates the generation of Azure service recommendations from customer transcripts, utilizing the OpenAI API.
+
+#### Functionality
+
+- Reads customer transcripts from a specified directory.
+- Generates recommendations using OpenAI's GPT-3 service.
+- Saves the recommendations to a designated folder.
+- Configurable through environment variables like API key, transcript and recommendation folder paths, prompt strategy, and output preferences.
+
+### Speech Text Server Module
+
+This module serves as a server for processing speech-to-text analysis.
+
+#### Functionality
+
+- Manages speech-to-text operations.
+- Provides functionalities like audio recording, text analysis, and recommendations generation.
+- Handles various server operations and client requests.
+
+### Transcribe Audio Files Module
+
+This module is designed for transcribing audio files using Azure's Speech-to-Text API.
+
+#### Functionality
+
+- Processes audio files, either individually or in a batch, for transcription.
+- Transcribes audio files to text using Azure's Speech-to-Text API.
+- Supports error handling during the transcription process.
+- Allows results to be written in different formats, including file, JSON, and SQLite database.
 
 ![divider][divider]
 

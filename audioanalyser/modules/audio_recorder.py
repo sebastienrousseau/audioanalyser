@@ -51,20 +51,20 @@ load_dotenv()
 
 # Constants for audio recording settings, loaded from environment variables
 AUDIO_SETTINGS = {
-    'CHANNELS': int(os.getenv('CHANNELS', 1)),
-    'CHUNK': int(os.getenv('CHUNK', 1024)),
-    'FORMAT': int(os.getenv('FORMAT', pyaudio.paInt16)),
-    'RATE': int(os.getenv('RATE', 44100)),
-    'RECORD_SECONDS': int(os.getenv('RECORD_SECONDS', 10)),
-    'INPUT_FOLDER': os.getenv('INPUT_FOLDER', 'recordings')
+    "CHANNELS": int(os.getenv("CHANNELS", 1)),
+    "CHUNK": int(os.getenv("CHUNK", 1024)),
+    "FORMAT": int(os.getenv("FORMAT", pyaudio.paInt16)),
+    "RATE": int(os.getenv("RATE", 44100)),
+    "RECORD_SECONDS": int(os.getenv("RECORD_SECONDS", 10)),
+    "INPUT_FOLDER": os.getenv("INPUT_FOLDER", "recordings"),
 }
 
 # Setting up logging for the application, helpful for debugging and monitoring
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s %(levelname)s %(name)s - %(message)s'
+    format="%(asctime)s %(levelname)s %(name)s - %(message)s",
 )
-logger = logging.getLogger('AudioRecorder')
+logger = logging.getLogger("AudioRecorder")
 
 
 class Config:
@@ -75,7 +75,7 @@ class Config:
 
     def __init__(self, settings):
         self.settings = settings
-        self.validate_directory(self.settings['INPUT_FOLDER'])
+        self.validate_directory(self.settings["INPUT_FOLDER"])
         self.validate_audio_settings()
 
     @staticmethod
@@ -87,16 +87,18 @@ class Config:
 
     def validate_audio_settings(self):
         # Validates audio settings against predefined acceptable values
-        if self.settings['FORMAT'] not in [
+        if self.settings["FORMAT"] not in [
             pyaudio.paInt16,
             pyaudio.paInt24,
-            pyaudio.paInt32
+            pyaudio.paInt32,
         ]:
             raise ValueError("Invalid audio format.")
-        if not (1 <= self.settings['CHANNELS'] <= 2):
+        if not (1 <= self.settings["CHANNELS"] <= 2):
             raise ValueError("Channels must be 1 (mono) or 2 (stereo).")
-        if not 8000 <= self.settings['RATE'] <= 48000:
-            raise ValueError("Sample rate must be between 8000 and 48000 Hz.")
+        if not 8000 <= self.settings["RATE"] <= 48000:
+            raise ValueError(
+                "Sample rate must be between 8000 and 48000 Hz."
+            )
 
 
 class AudioRecorder:
@@ -124,36 +126,40 @@ class AudioRecorder:
         self.output_file_path = self.generate_output_file()
 
         stream = self.audio.open(
-            format=self.config.settings['FORMAT'],
-            channels=self.config.settings['CHANNELS'],
-            rate=self.config.settings['RATE'],
+            format=self.config.settings["FORMAT"],
+            channels=self.config.settings["CHANNELS"],
+            rate=self.config.settings["RATE"],
             input=True,
-            frames_per_buffer=self.config.settings['CHUNK']
+            frames_per_buffer=self.config.settings["CHUNK"],
         )
 
-        with wave.open(self.output_file_path, 'wb') as wf:
-            wf.setnchannels(self.config.settings['CHANNELS'])
-            wf.setsampwidth(self.audio.get_sample_size(
-                self.config.settings['FORMAT'])
+        with wave.open(self.output_file_path, "wb") as wf:
+            wf.setnchannels(self.config.settings["CHANNELS"])
+            wf.setsampwidth(
+                self.audio.get_sample_size(
+                    self.config.settings["FORMAT"]
+                )
             )
-            wf.setframerate(self.config.settings['RATE'])
+            wf.setframerate(self.config.settings["RATE"])
 
             try:
                 with tqdm(
-                    total=self.config.settings['RECORD_SECONDS'],
+                    total=self.config.settings["RECORD_SECONDS"],
                     desc="Recording",
-                    unit="sec"
+                    unit="sec",
                 ) as pbar:
                     for _ in range(
                         int(
-                            self.config.settings['RATE'] /
-                            self.config.settings['CHUNK'] *
-                            self.config.settings['RECORD_SECONDS']
+                            self.config.settings["RATE"]
+                            / self.config.settings["CHUNK"]
+                            * self.config.settings["RECORD_SECONDS"]
                         )
                     ):
                         if not self.is_recording:
                             break
-                        data = stream.read(self.config.settings['CHUNK'])
+                        data = stream.read(
+                            self.config.settings["CHUNK"]
+                        )
                         wf.writeframes(data)
                         pbar.update(1)
             finally:
@@ -172,7 +178,8 @@ class AudioRecorder:
         """
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         return os.path.join(
-            self.config.settings['INPUT_FOLDER'], f"recording_{timestamp}.wav"
+            self.config.settings["INPUT_FOLDER"],
+            f"recording_{timestamp}.wav",
         )
 
     def setup_signal_handling(self):

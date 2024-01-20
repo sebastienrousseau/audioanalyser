@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "audioanalyser"
-version = "0.0.3"
-description = "Audio Analyser Pro: Transform call recordings into actionable insights using Microsoft Azure AI. Advanced transcription and analysis for insightful reports."
+version = "0.0.4"
+description = "Audio Analyser: Leverages the power of Microsoft Azure's advanced AI services to transform your audio data into valuable insight reports in no time through automatic speech-to-text, text analysis, and recommendations."
 authors = ["Sebastien Rousseau <sebastian.rousseau@gmail.com>"]
 license = "Apache Software License"
 readme = "README.md"
@@ -13,6 +13,7 @@ aiohttp = "3.9.1"
 asyncio = "3.4.3"
 azure-ai-textanalytics = "5.3.0"
 azure-cognitiveservices-speech = "1.34.0"
+azure-common = "1.1.28"
 azure-core = "1.29.6"
 cherrypy = "18.9.0"
 datetime = "5.4"

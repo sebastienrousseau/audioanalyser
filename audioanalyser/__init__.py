@@ -14,4 +14,4 @@
 # limitations under the License.
 
 """The Python Audio Analyser module."""
-__version__ = "0.0.3"
+__version__ = "0.0.4"

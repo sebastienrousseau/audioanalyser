@@ -25,15 +25,26 @@ their code.
 
 import argparse
 import asyncio
+import json
+import logging
+from pathlib import Path
 from audioanalyser.modules.analyze_text_files import analyze_text_files
 from audioanalyser.modules.audio_recorder import audio_recorder
 from audioanalyser.modules.azure_recommendation import (
     azure_recommendation,
 )
+from audioanalyser.modules.azure_translator import azure_translator
 from audioanalyser.modules.speech_text_server import speech_text_server
 from audioanalyser.modules.transcribe_audio_files import (
     transcribe_audio_files,
 )
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 
 async def main():
@@ -81,10 +92,9 @@ This command generates summaries based on the specified transcript.
     parser.add_argument(
         "-rec",
         "--record",
-        action="store_true",
-        help="""
-This command records audio from the microphone and saves it as a WAV file.
-        """,
+        nargs="?",
+        const="default",
+        help="Record audio. Optionally specify settings file (JSON)."
     )
 
     parser.add_argument(
@@ -99,6 +109,13 @@ server.
         """,
     )
     parser.add_argument(
+        "-t",
+        "--translate",
+        nargs="*",
+        default=None,
+        help="Language codes for translation, e.g., -l en fr de"
+    )
+    parser.add_argument(
         "files", nargs="*", help="File paths to process"
     )
 
@@ -106,22 +123,48 @@ server.
 
     try:
         if args.speech_to_text:
-            transcribe_audio_files(args.files[0])
-        elif args.text_analysis:
-            if "files" in args:
-                await analyze_text_files(args.files)
+            if Path(args.files[0]).is_file():
+                transcribe_audio_files(args.files[0])
             else:
-                await analyze_text_files()
+                logger.error("Specified audio file does not exist.")
+        elif args.text_analysis:
+            await analyze_text_files(args.files)
         elif args.summary:
             azure_recommendation()
         elif args.server:
             speech_text_server()
         elif args.record:
-            audio_recorder()
+            settings = None
+            if args.record != "default":
+                settings = load_audio_settings(args.record)
+            await audio_recorder(settings)
+        elif args.translate:
+            azure_translator(*args.translate)
         else:
             parser.print_help()
     except Exception as e:
-        print(f"An error occurred: {e}")
+        logger.error(f"An error occurred: {e}")
+
+
+def load_audio_settings(file_path):
+    """Loads audio settings from a JSON file.
+
+    Args:
+        file_path (str): Path to the JSON file containing the audio settings.
+
+    Returns:
+        Optional[Dict]: The audio settings, or None if an error occurred.
+
+    Raises:
+        ValueError: If the file does not exist or is not a valid JSON file.
+
+    """
+    try:
+        with open(file_path, 'r') as file:
+            return json.load(file)
+    except Exception as e:
+        logger.error(f"Error loading audio settings: {e}")
+        return None
 
 
 if __name__ == "__main__":

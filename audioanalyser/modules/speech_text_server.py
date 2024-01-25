@@ -31,6 +31,7 @@ from audioanalyser.modules.transcribe_audio_files import (
     transcribe_audio_files,
 )
 from audioanalyser.modules.analyze_text_files import analyze_text_files
+from audioanalyser.modules.azure_translator import azure_translator
 
 
 class SpeechTextAnalysisServer:
@@ -87,7 +88,11 @@ class SpeechTextAnalysisServer:
             sys.stdout = log_capture_string = io.StringIO()
 
             # Start recording and get the file path
-            recorded_file_path = audio_recorder()
+            recorded_file_path = audio_recorder()  # Removed asyncio.run
+
+            # Check if recording was successful
+            if recorded_file_path is None:
+                raise Exception("Failed to record audio.")
 
             # Retrieve the log output
             log_output = log_capture_string.getvalue()
@@ -100,7 +105,7 @@ class SpeechTextAnalysisServer:
         except Exception as e:
             cherrypy.log(f"Error during audio recording: {str(e)}")
             cherrypy.response.status = 500
-            return {"error": "An error occurred during audio recording"}
+            return {"error": str(e)}
 
     @cherrypy.expose
     @cherrypy.tools.json_out()
@@ -262,6 +267,33 @@ class SpeechTextAnalysisServer:
 
     @cherrypy.expose
     @cherrypy.tools.json_out()
+    def get_translations_list(self):
+        """
+        Endpoint to retrieve a list of translations.
+        """
+        outputs_folder = "./resources/translations/"
+        try:
+            # Find all report files in the Outputs folder
+            list_of_files = glob.glob(
+                os.path.join(outputs_folder, "*.txt")
+            )
+            reports = []
+            for file_path in list_of_files:
+                with open(file_path, "r") as file:
+                    content = file.read()
+                    reports.append(
+                        {
+                            "filename": os.path.basename(file_path),
+                            "content": content,
+                        }
+                    )
+            return reports
+        except IOError:
+            cherrypy.response.status = 500
+            return {"error": "Error reading report files."}
+
+    @cherrypy.expose
+    @cherrypy.tools.json_out()
     def generate_recommendations(self):
         """
         Endpoint to trigger executive summary generation.
@@ -297,6 +329,43 @@ class SpeechTextAnalysisServer:
         except Exception as e:
             with open(status_file_path, "w") as file:
                 file.write(f"Error: {str(e)}")
+
+    @cherrypy.expose
+    @cherrypy.tools.json_out()
+    @cherrypy.tools.json_in()  # to parse JSON body
+    def process_all_translations(self):
+        """
+        Endpoint to trigger text translation asynchronously.
+        """
+        try:
+            # Retrieve data from the request body
+            data = cherrypy.request.json
+            countryCode = data.get('countryCode')
+
+            # Run the text translation process in a separate thread
+            thread = threading.Thread(
+                target=self.run_translation_thread,
+                args=(countryCode,)
+            )
+            thread.start()
+
+            message = "Translation process started for country code: "
+            result_message = message + str(countryCode)
+            return {"result": result_message}
+
+        except Exception as e:
+            cherrypy.log(f"Error during text translation: {str(e)}")
+            return {"error": "An error occurred during text translation"}, 500
+
+    def run_translation_thread(self, countryCode=None):
+        """
+        Worker thread for text translation.
+        """
+        try:
+            # Assuming azure_translator is a synchronous function
+            azure_translator(countryCode)
+        except Exception as e:
+            cherrypy.log(f"Error in translation thread: {str(e)}")
 
 
 def graceful_shutdown(signum, frame):

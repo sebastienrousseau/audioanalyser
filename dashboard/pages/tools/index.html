@@ -329,8 +329,39 @@
                   </div>
                 </div>
               </div>
-          </div>
           <!-- #End Row 4 -->
+          <!-- Row 5 -->
+          <div class="row">
+            <div class="col-lg-6 grid-margin stretch-card">
+                <div class="card h-auto">
+                  <div class="card-body center text-center">
+                    <h2 class="text-start">Generate Translations</h2>
+                    <p class="card-description text-start">
+                      Enter the country code (e.g., fr, de, es) to start the process of generating translations for all the transcripts.
+                  </p>
+          
+                  <!-- Input Field for Country Code -->
+                  <input type="text" id="countryCodeInput" class="form-control mb-3" placeholder="Enter country code">
+          
+                  <button onclick="processAllTranslations()" class="btn btn-block btn-lg fs-6 btn-danger">Generate</button>
+                  <pre id="allTranslationsResults" class="text-success fs-6"></pre>
+              </div>
+              </div>
+            </div>
+            <div class="col-lg-6 grid-margin stretch-card">
+              <div class="card h-auto">
+                <div class="card-body center text-center">
+                  <h2 class="text-start">Translations</h2>
+                  <p class="card-description text-start">This extract all the information from the generated translations.</p>
+                  <button onclick="showTranslations()" class="btn btn-block btn-lg fs-6 btn-danger">Show</button>
+                  <button onclick="hideTranslations()" class="btn btn-block btn-lg fs-6 btn-outline-dark">Hide</button>
+                  <ul id="translationsList" class="text-start"></ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+          
           <!-- content-wrapper ends -->
           <!-- partial:../../partials/_footer.html -->
           <footer class="footer border-top mt-auto py-3">
@@ -433,6 +464,14 @@
       }
 
       /**
+       * Hides the translations list.
+       */
+      function hideTranslations() {
+          const container = document.getElementById('translationsList');
+          container.innerHTML = ''; // Clear the translations list
+      }
+
+      /**
        * Processes all speech to text.
        */
       function processAllSpeechToText() {
@@ -499,6 +538,43 @@
               alert('Error generating recommendations.');
           }
       }
+
+      /**
+       * Processes all translations.
+       */
+       async function processAllTranslations() {
+    try {
+        // Retrieve the country code from the input field
+        const countryCode = document.getElementById('countryCodeInput').value;
+
+        // Validate if the country code has been entered
+        if (!countryCode) {
+            alert('Please enter a country code.');
+            return;
+        }
+
+        // Prepare the request with the country code in the body
+        const response = await fetch('/process_all_translations', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ countryCode: countryCode })
+        });
+
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+
+        const data = await response.json();
+        document.getElementById('allTranslationsResults').textContent = data.result;
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Error processing translations.');
+    }
+}
+
+
 
       /**
        * Shows transcripts.
@@ -681,6 +757,56 @@
           });
       }
 
+      /**
+       * Shows translations.
+       */
+      function showTranslations() {
+          fetch('/get_translations_list', {
+              method: 'POST'
+          })
+          .then(response => {
+              if (!response.ok) {
+                  throw new Error('Network response was not ok');
+              }
+              return response.json();
+          })
+          .then(files => {
+              // Sort the files array by filename alphabetically
+              files.sort((a, b) => a.filename.localeCompare(b.filename));
+
+              const container = document.getElementById('translationsList');  // Ensure this is the correct container ID
+              container.innerHTML = '';
+
+              files.forEach(file => {
+                  const translationText = file.content;  // Assuming each file has 'content' property
+                  const filename = file.filename;
+
+                  // Create elements for the filename and translation content
+                  const listItem = document.createElement('div');
+                  listItem.classList.add('border', 'p-3', 'mb-3');
+
+                  const filenameHeader = document.createElement('strong');
+                  filenameHeader.textContent = `Translation: ${filename}`;
+
+                  const translationDiv = document.createElement('div');
+                  translationDiv.classList.add('translation-content');
+                  translationDiv.innerHTML = translationText.replace(/\n/g, '<br>'); // Replace line breaks with <br>
+
+                  listItem.appendChild(filenameHeader);
+                  listItem.appendChild(translationDiv);
+                  container.appendChild(listItem);
+
+                  // Create and append an <hr> element if needed
+                  const hrElement = document.createElement('hr');
+                  container.appendChild(hrElement);
+              });
+          })
+          .catch(error => {
+              console.error('Error:', error);
+              alert('Error fetching or displaying translations.');
+          });
+      }
+      
       /**
        * Starts recording audio.
        */

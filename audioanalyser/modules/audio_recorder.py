@@ -13,57 +13,88 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""
-This module contains the code for the audio recording application.
+"""Audio Recorder Module
 
-The main function, audio_recorder, is used to start the audio recording
-process. It uses the Config class to load the audio recording settings from the
-.env file, and the AudioRecorder class to manage the audio recording process.
+This module provides functionality to record audio from an input device and
+save as a WAV file.
 
-The Config class ensures that the input and output directories exist, and that
-the audio settings are valid. It also generates the output file path for the
-recorded audio.
+Usage:
+    - Configure audio parameters in .env environment file
+    - Call audio_recorder() to start recording
+    - Recording is saved to timestamped WAV file
+    - Custom audio settings can optionally be specified
 
-The AudioRecorder class sets up signal handling for the application, and
-manages the audio stream and file output. It generates the output file path,
+Features:
+    - Reads audio from microphone/line-in input
+    - Saves recording to configured output folder
+    - Outputs 24-bit WAV files by default
+    - Handles PyAudio stream exceptions
+    - Validation of configuration parameters
+    - Progress bar with status, count, and timing
+
+The audio_recorder() function initializes the configuration, recorder,
 and starts the recording process.
 
-If an error occurs during the recording process, the error is logged and None
-is returned. Otherwise, the output file path is returned.
+The Config class loads settings, checks output folder presence,
+and validates parameters.
 
-Note: This code assumes that the .env file contains the required environment
-variables for the audio recording settings.
+The AudioRecorder class manages the PyAudio stream and WAV file handling.
+It also sets up signal handling for graceful shutdown.
+
+Author:
+    Sebastien Rousseau.
+
+Version:
+    0.0.5
+
+Notes:
+    - Requires PyAudio and PyDotEnv libraries
+    - Requires .env file with AUDIO_SETTINGS
+    environment variables
 """
 
 # Import required libraries
+from datetime import datetime
+from dataclasses import dataclass, field
 import logging
+from dotenv import load_dotenv
 import os
 import pyaudio
 import signal
 import threading
 import wave
-from datetime import datetime
-from dotenv import load_dotenv
+from typing import Optional, Union
 from tqdm import tqdm
 
-# Load environment variables from .env file
+
+# Load environment variables
 load_dotenv()
 
-# Constants for audio recording settings, loaded from environment variables
-AUDIO_SETTINGS = {
-    "CHANNELS": int(os.getenv("CHANNELS", 1)),
-    "CHUNK": int(os.getenv("CHUNK", 1024)),
-    "FORMAT": int(os.getenv("FORMAT", pyaudio.paInt16)),
-    "RATE": int(os.getenv("RATE", 44100)),
-    "RECORD_SECONDS": int(os.getenv("RECORD_SECONDS", 10)),
-    "INPUT_FOLDER": os.getenv("INPUT_FOLDER", "recordings"),
-}
 
-# Setting up logging for the application, helpful for debugging and monitoring
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s %(levelname)s %(name)s - %(message)s",
-)
+# Define the AudioSettings dataclass for structured configuration
+@dataclass
+class AudioSettings:
+    channels: int = field(default=1)
+    chunk: int = field(default=1024)
+    format: int = field(default=pyaudio.paInt16)
+    input_folder: str = field(default="recordings")
+    rate: int = field(default=44100)
+    record_seconds: int = field(default=10)
+
+    def __str__(self) -> str:
+        return (
+            f"AudioSettings(channels={self.channels}, chunk={self.chunk}, "
+            f"format={self.format}, input_folder='{self.input_folder}', "
+            f"rate={self.rate}, record_seconds={self.record_seconds})"
+        )
+
+    def __repr__(self) -> str:
+        return self.__str__()
+
+
+# Initialize logging
+logging.basicConfig(level=logging.INFO,
+                    format="%(asctime)s %(levelname)s %(name)s - %(message)s")
 logger = logging.getLogger("AudioRecorder")
 
 
@@ -73,13 +104,13 @@ class Config:
     Ensures audio recording environment is set up correctly.
     """
 
-    def __init__(self, settings):
+    def __init__(self, settings: AudioSettings):
         self.settings = settings
-        self.validate_directory(self.settings["INPUT_FOLDER"])
+        self.validate_directory(self.settings.input_folder)
         self.validate_audio_settings()
 
     @staticmethod
-    def validate_directory(directory):
+    def validate_directory(directory: str):
         # Ensures the specified directory exists; creates it if not found
         if not os.path.exists(directory):
             os.makedirs(directory)
@@ -87,18 +118,16 @@ class Config:
 
     def validate_audio_settings(self):
         # Validates audio settings against predefined acceptable values
-        if self.settings["FORMAT"] not in [
+        if self.settings.format not in [
             pyaudio.paInt16,
             pyaudio.paInt24,
-            pyaudio.paInt32,
+            pyaudio.paInt32
         ]:
             raise ValueError("Invalid audio format.")
-        if not (1 <= self.settings["CHANNELS"] <= 2):
+        if not (1 <= self.settings.channels <= 2):
             raise ValueError("Channels must be 1 (mono) or 2 (stereo).")
-        if not 8000 <= self.settings["RATE"] <= 48000:
-            raise ValueError(
-                "Sample rate must be between 8000 and 48000 Hz."
-            )
+        if not 8000 <= self.settings.rate <= 48000:
+            raise ValueError("Sample rate must be between 8000 and 48000 Hz.")
 
 
 class AudioRecorder:
@@ -107,84 +136,16 @@ class AudioRecorder:
     output.
     """
 
-    def __init__(self, config):
-        """
-        Args:
-            config (Config): The application configuration settings.
-        """
+    def __init__(self, config: Config):
         self.config = config
         self.audio = pyaudio.PyAudio()
         self.is_recording = False
         self.output_file_path = None
-        self.setup_signal_handling()
 
     def record_audio(self):
         """
         Starts the audio recording process.
-        """
-        self.is_recording = True
-        self.output_file_path = self.generate_output_file()
-
-        stream = self.audio.open(
-            format=self.config.settings["FORMAT"],
-            channels=self.config.settings["CHANNELS"],
-            rate=self.config.settings["RATE"],
-            input=True,
-            frames_per_buffer=self.config.settings["CHUNK"],
-        )
-
-        with wave.open(self.output_file_path, "wb") as wf:
-            wf.setnchannels(self.config.settings["CHANNELS"])
-            wf.setsampwidth(
-                self.audio.get_sample_size(
-                    self.config.settings["FORMAT"]
-                )
-            )
-            wf.setframerate(self.config.settings["RATE"])
-
-            try:
-                with tqdm(
-                    total=self.config.settings["RECORD_SECONDS"],
-                    desc="Recording",
-                    unit="sec",
-                ) as pbar:
-                    for _ in range(
-                        int(
-                            self.config.settings["RATE"]
-                            / self.config.settings["CHUNK"]
-                            * self.config.settings["RECORD_SECONDS"]
-                        )
-                    ):
-                        if not self.is_recording:
-                            break
-                        data = stream.read(
-                            self.config.settings["CHUNK"]
-                        )
-                        wf.writeframes(data)
-                        pbar.update(1)
-            finally:
-                stream.stop_stream()
-                stream.close()
-                self.audio.terminate()
-                self.is_recording = False
-                logger.info(f"File saved as: {self.output_file_path}")
-
-    def generate_output_file(self):
-        """
-        Generates the output file path for the recorded audio.
-
-        Returns:
-            str: The output file path.
-        """
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        return os.path.join(
-            self.config.settings["INPUT_FOLDER"],
-            f"recording_{timestamp}.wav",
-        )
-
-    def setup_signal_handling(self):
-        """
-        Sets up signal handling for the application.
+        Sets up signal handling for graceful exit.
         """
         if threading.current_thread() is threading.main_thread():
             signal.signal(signal.SIGINT, self.signal_handler)
@@ -194,32 +155,111 @@ class AudioRecorder:
                 "Signal handling can only be set up in the main thread."
             )
 
-    def signal_handler(self, signal_received, frame):
-        """
-        Handles signals received by the application.
+        self.is_recording = True
+        self.output_file_path = self.generate_output_file()
 
-        Args:
-            signal_received (int): The signal received.
-            frame (object): The frame object.
+        try:
+            stream = self.audio.open(
+                format=self.config.settings.format,
+                channels=self.config.settings.channels,
+                rate=self.config.settings.rate,
+                input=True,
+                frames_per_buffer=self.config.settings.chunk
+            )
+        except Exception:
+            logger.exception("Failed to open stream.")
+            return
+
+        try:
+            # Calculate total number of chunks to read
+            total_chunks = int(
+                self.config.settings.rate /
+                self.config.settings.chunk *
+                self.config.settings.record_seconds
+            )
+
+            with wave.open(self.output_file_path, "wb") as wf:
+                wf.setnchannels(self.config.settings.channels)
+                wf.setsampwidth(self.audio.get_sample_size(
+                    self.config.settings.format
+                ))
+                wf.setframerate(self.config.settings.rate)
+
+                # Corrected usage of tqdm
+                with tqdm(
+                    total=total_chunks, desc="Recording", unit="chunk"
+                ) as pbar:
+                    for _ in range(total_chunks):
+                        if not self.is_recording:
+                            break
+                        data = stream.read(self.config.settings.chunk)
+                        wf.writeframes(data)
+                        pbar.update(1)
+
+        except Exception:
+            logger.exception(
+                "Error occurred during recording or file writing."
+            )
+        finally:
+            stream.stop_stream()
+            stream.close()
+            self.audio.terminate()
+            self.is_recording = False
+            logger.info(f"File saved as: {self.output_file_path}")
+
+        self.validate_output_file()
+
+    def generate_output_file(self) -> str:
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        return os.path.join(
+            self.config.settings.input_folder,
+            f"recording_{timestamp}.wav"
+        )
+
+    def validate_output_file(self):
         """
+        Validates the output WAV file, checking for specific properties
+        like file size.
+        """
+        if os.path.exists(self.output_file_path):
+            file_size = os.path.getsize(self.output_file_path)
+            if file_size < 100:  # Arbitrary minimum file size
+                logger.warning(
+                    f"Output file {self.output_file_path} is"
+                    f"unusually small. Possible recording issue.")
+        else:
+            logger.error(
+                f"Output file {self.output_file_path} does not exist."
+            )
+
+    def signal_handler(self, signal_received, frame):
         logger.info("Signal received, stopping recording...")
         self.is_recording = False
 
 
-def audio_recorder() -> str:
-    """
-    Main function to start audio recording.
-
-    Returns:
-        str: The path to the recorded audio file.
-    """
+def audio_recorder(
+    custom_settings: Union[AudioSettings, dict] = None
+) -> Optional[str]:
     try:
-        config = Config(AUDIO_SETTINGS)
+        if isinstance(custom_settings, dict):
+            settings = AudioSettings(**custom_settings)
+        elif isinstance(custom_settings, AudioSettings):
+            settings = custom_settings
+        else:
+            settings = AudioSettings(
+                channels=int(os.getenv("CHANNELS", 1)),
+                chunk=int(os.getenv("CHUNK", 1024)),
+                format=int(os.getenv("FORMAT", pyaudio.paInt16)),
+                input_folder=os.getenv("INPUT_FOLDER", "recordings"),
+                rate=int(os.getenv("RATE", 44100)),
+                record_seconds=int(os.getenv("RECORD_SECONDS", 10)),
+            )
+        config = Config(settings)
         recorder = AudioRecorder(config)
         recorder.record_audio()
         return recorder.output_file_path
-    except Exception as e:
-        logger.error(f"Error in audio recorder: {e}")
+    except Exception:
+        logger.exception("Error in audio recorder.")
         return None
 
 

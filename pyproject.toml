@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "audioanalyser"
-version = "0.0.4"
+version = "0.0.5"
 description = "Audio Analyser: Leverages the power of Microsoft Azure's advanced AI services to transform your audio data into valuable insight reports in no time through automatic speech-to-text, text analysis, and recommendations."
 authors = ["Sebastien Rousseau <sebastian.rousseau@gmail.com>"]
 license = "Apache Software License"

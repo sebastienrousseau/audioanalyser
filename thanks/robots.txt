@@ -1,0 +1,2 @@
+User-agent: *
+Sitemap: https://audioanalyser.co/thanks/index.html/sitemap.xml

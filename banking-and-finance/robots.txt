@@ -1,0 +1,2 @@
+User-agent: *
+Sitemap: https://audioanalyser.co/accounting-and-bookkeeping/index.html/sitemap.xml

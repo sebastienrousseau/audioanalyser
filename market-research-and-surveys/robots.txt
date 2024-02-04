@@ -1,0 +1,2 @@
+User-agent: *
+Sitemap: https://audioanalyser.co/market-research-and-surveys/index.html/sitemap.xml

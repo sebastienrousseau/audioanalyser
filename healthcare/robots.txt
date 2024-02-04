@@ -1,0 +1,2 @@
+User-agent: *
+Sitemap: https://audioanalyser.co/healthcare/index.html/sitemap.xml

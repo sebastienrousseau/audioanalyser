@@ -1,0 +1,14 @@
+/* TEAM */
+	Name: Team Audio Analyser
+	Website: https://audioanalyser.co
+	Twitter: @wwdseb
+	Location: London, UK
+
+/* THANKS */
+	Thanks: Thanks for reading!
+
+/* SITE */
+	Last update: 2024-02-05
+	Standards: HTML5, CSS3, RSS, Atom, JSON, XML, YAML, Markdown, TOML
+	Components: Kaishi, Kaishi Builder, Kaishi CLI, Kaishi Templates, Kaishi Themes
+	Software: Shokunin, Rust

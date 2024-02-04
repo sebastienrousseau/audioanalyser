@@ -1,0 +1,2 @@
+User-agent: *
+Sitemap: https://audioanalyser.co/insurance/index.html/sitemap.xml

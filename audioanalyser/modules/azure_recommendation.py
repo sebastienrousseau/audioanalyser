@@ -209,7 +209,8 @@ class RecommendationsGenerator:
     def generate_recommendations(self) -> None:
         """
         Processes each transcript file and generates recommendations.
-        The recommendations are saved in various formats in the configured folders.
+        The recommendations are saved in various formats in the
+        configured folders.
         """
         # Ensure the base folders exist
         self.config.RECOMMENDATIONS_FOLDER.mkdir(exist_ok=True)
@@ -217,16 +218,30 @@ class RecommendationsGenerator:
         db_filename = self.config.RECOMMENDATIONS_FOLDER / "recommendations.db"
         table_name = "recommendations"
 
-        for transcript in Transcript.iter_transcripts(self.config.TRANSCRIPTS_FOLDER):
+        for transcript in Transcript.iter_transcripts(
+            self.config.TRANSCRIPTS_FOLDER
+        ):
             recommendation_text = self.generate_recommendation(transcript)
 
             # Saving as a text file
-            recommendation_filename_txt = f"azure_recommendation-{transcript.path.stem}.txt"
-            self.save_text_to_file(self.config.RECOMMENDATIONS_FOLDER / recommendation_filename_txt, recommendation_text)
+            recommendation_filename_txt = (
+                f"azure_recommendation-{transcript.path.stem}.txt"
+            )
+            self.save_text_to_file(
+                self.config.RECOMMENDATIONS_FOLDER /
+                recommendation_filename_txt,
+                recommendation_text
+            )
 
             # Saving as a JSON file
-            recommendation_filename_json = f"azure_recommendation-{transcript.path.stem}.json"
-            self.save_data_to_json(self.config.RECOMMENDATIONS_FOLDER / recommendation_filename_json, {"recommendation": recommendation_text})
+            recommendation_filename_json = (
+                f"azure_recommendation-{transcript.path.stem}.json"
+            )
+            self.save_data_to_json(
+                self.config.RECOMMENDATIONS_FOLDER /
+                recommendation_filename_json,
+                {"recommendation": recommendation_text}
+            )
 
             # Preparing data for SQLite insertion
             data_to_insert = [(transcript.path.name, recommendation_text)]
@@ -234,8 +249,9 @@ class RecommendationsGenerator:
             # Inserting into SQLite database
             self.insert_data_to_sqlite(db_filename, table_name, data_to_insert)
 
-            logger.info(f"Generated recommendation for {transcript.path.name}")
-
+            logger.info(
+                f"Generated recommendation for {transcript.path.name}"
+            )
 
     def save_text_to_file(self, output_path: Path, content: str) -> None:
         """
@@ -263,20 +279,32 @@ class RecommendationsGenerator:
             json.dump(data, json_file, indent=4)
         logger.info(f"Saved data to JSON file {json_path}")
 
-    def insert_data_to_sqlite(self, db_path: Path, table_name: str, data: list) -> None:
+    def insert_data_to_sqlite(
+        self,
+        db_path: Path,
+        table_name: str,
+        data: list
+    ) -> None:
         """
         Inserts data into an SQLite database.
 
         Args:
             db_path (Path): The path to the SQLite database file.
             table_name (str): The name of the table to insert data into.
-            data (list): A list of tuples, where each tuple represents the data to insert per row.
+            data (list): A list of tuples, where each tuple represents the
+            data to insert per row.
         """
         db_path.parent.mkdir(parents=True, exist_ok=True)
         with sqlite3.connect(db_path) as conn:
             cursor = conn.cursor()
-            cursor.execute(f"CREATE TABLE IF NOT EXISTS {table_name} (filename TEXT, transcription TEXT)")
-            cursor.executemany(f"INSERT INTO {table_name} (filename, transcription) VALUES (?, ?)", data)
+            cursor.execute(
+                f"CREATE TABLE IF NOT EXISTS {table_name} "
+                "(filename TEXT, transcription TEXT)"
+            )
+            cursor.executemany(
+                f"INSERT INTO {table_name} "
+                "(filename, transcription) VALUES (?, ?)", data
+            )
         logger.info(f"Inserted data into {db_path} in table {table_name}")
 
     def generate_recommendation(self, transcript: Transcript) -> str:

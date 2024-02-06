@@ -142,7 +142,9 @@ class SpeechTextAnalysisServer:
         try:
             files_dir = "./resources/input"
             full_path = os.path.abspath(os.path.join(files_dir, filename))
-            return cherrypy.lib.static.serve_file(full_path, content_type="audio/wav")
+            return cherrypy.lib.static.serve_file(
+                full_path, content_type="audio/wav"
+            )
         except Exception as e:
             cherrypy.log(f"Error serving audio file: {str(e)}")
             cherrypy.response.status = 500
@@ -160,15 +162,21 @@ class SpeechTextAnalysisServer:
             full_path = os.path.abspath(os.path.join(files_dir, filename))
 
             # Set the 'Content-Disposition' header to suggest a filename
-            cherrypy.response.headers['Content-Disposition'] = f'attachment; filename="{filename}"'
+            cherrypy.response.headers['Content-Disposition'] = (
+                f'attachment; filename="{filename}"'
+            )
 
             # Serve the file for download
-            return cherrypy.lib.static.serve_file(full_path, content_type="application/octet-stream")
+            return cherrypy.lib.static.serve_file(
+                full_path,
+                content_type="application/octet-stream"
+            )
         except Exception as e:
             cherrypy.log(f"Error serving audio file for download: {str(e)}")
             cherrypy.response.status = 500
             return {
-                "error": "An error occurred while serving the audio file for download"
+                "error": "An error occurred while serving the audio file"
+                " for download"
             }
 
     @cherrypy.expose

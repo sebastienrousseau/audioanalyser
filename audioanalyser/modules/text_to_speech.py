@@ -19,8 +19,10 @@ class Config:
 
     Attributes:
         - api_key (str): The API key for the Azure Text-to-Speech API.
-        - region (str): The Azure region where the Text-to-Speech API is located.
-        - OUTPUT_FOLDER (str): The folder path where the synthesized audio files will be saved.
+        - region (str): The Azure region where the Text-to-Speech API is
+        located.
+        - OUTPUT_FOLDER (str): The folder path where the synthesized audio
+        files will be saved.
         - audio_extension (str): The audio file extension for the output files.
     """
 
@@ -36,7 +38,8 @@ class Config:
         Validate the configuration parameters.
 
         Raises:
-            EnvironmentError: If any required environment variables are missing.
+            EnvironmentError: If any required environment variables
+            are missing.
         """
         required_vars = [
             self.api_key,
@@ -61,10 +64,12 @@ class TextToSpeech:
     Synthesizes speech from text using the Azure Text-to-Speech API.
 
     Args:
-        config (Config): The configuration parameters for the Azure Text-to-Speech API.
+        config (Config): The configuration parameters for the Azure
+        Text-to-Speech API.
 
     Attributes:
-        config (Config): The configuration parameters for the Azure Text-to-Speech API.
+        config (Config): The configuration parameters for the Azure
+        Text-to-Speech API.
     """
 
     def __init__(self, config):
@@ -79,7 +84,9 @@ class TextToSpeech:
             filename (str): The base name for the output audio file,
             without extension.
         """
-        speech_config = speechsdk.SpeechConfig(subscription=self.config.api_key, region=self.config.region)
+        speech_config = speechsdk.SpeechConfig(
+            subscription=self.config.api_key, region=self.config.region
+        )
 
         # Set the language
         speech_config.speech_synthesis_language = "en-GB"  # Language setting

@@ -632,7 +632,7 @@ additional terms or conditions.
 We would like to extend a big thank you to all the awesome contributors
 of [audioanalyser][05] for their help and support.
 
-[00]: https://audioanalyser.pro/ "Speech-to-Text & Analysis: Easy, Fast, Accurate."
+[00]: https://audioanalyser.co/ "Speech-to-Text & Analysis: Easy, Fast, Accurate."
 [01]: https://opensource.org/license/apache-2-0/ "Apache License, Version 2.0"
 [02]: http://opensource.org/licenses/MIT "MIT license"
 [03]: https://github.com/sebastienrousseau/audioanalyser/issues "Audio Analyser on GitHub"

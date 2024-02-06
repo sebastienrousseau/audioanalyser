@@ -135,6 +135,43 @@ class SpeechTextAnalysisServer:
             }
 
     @cherrypy.expose
+    def serve_audio(self, filename):
+        """
+        Endpoint to serve audio files.
+        """
+        try:
+            files_dir = "./resources/input"
+            full_path = os.path.abspath(os.path.join(files_dir, filename))
+            return cherrypy.lib.static.serve_file(full_path, content_type="audio/wav")
+        except Exception as e:
+            cherrypy.log(f"Error serving audio file: {str(e)}")
+            cherrypy.response.status = 500
+            return {
+                "error": "An error occurred while serving the audio file"
+            }
+
+    @cherrypy.expose
+    def download_audio(self, filename):
+        """
+        Endpoint to trigger audio file download.
+        """
+        try:
+            files_dir = "./resources/input"
+            full_path = os.path.abspath(os.path.join(files_dir, filename))
+
+            # Set the 'Content-Disposition' header to suggest a filename
+            cherrypy.response.headers['Content-Disposition'] = f'attachment; filename="{filename}"'
+
+            # Serve the file for download
+            return cherrypy.lib.static.serve_file(full_path, content_type="application/octet-stream")
+        except Exception as e:
+            cherrypy.log(f"Error serving audio file for download: {str(e)}")
+            cherrypy.response.status = 500
+            return {
+                "error": "An error occurred while serving the audio file for download"
+            }
+
+    @cherrypy.expose
     @cherrypy.tools.json_out()
     def process_text_analysis(self):
         """
@@ -349,7 +386,7 @@ class SpeechTextAnalysisServer:
             )
             thread.start()
 
-            message = "Translation process started for country code: "
+            message = "Translation process started: "
             result_message = message + str(countryCode)
             return {"result": result_message}
 

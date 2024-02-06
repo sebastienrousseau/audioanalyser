@@ -38,6 +38,9 @@ from audioanalyser.modules.speech_text_server import speech_text_server
 from audioanalyser.modules.transcribe_audio_files import (
     transcribe_audio_files,
 )
+from audioanalyser.modules.text_to_speech import (
+    text_to_speech,
+)
 
 # Configure logging
 logging.basicConfig(
@@ -77,6 +80,20 @@ extraction, and language detection. Results are saved in text and JSON
 formats, and a summary is stored in a SQLite database.
 Suitable for analysing transcripts for insights and important data
 points.
+        """,
+    )
+
+    parser.add_argument(
+        "-tts",
+        "--text_to_speech",
+        action="store_true",
+        help="""
+This command processes audio files in the specified sample folder,
+converting speech to text using Azure Cognitive Services.
+It supports long audio recognition and handles various speech
+recognition events. Results are saved as text and JSON files, and
+transcriptions are also stored in a SQLite database.
+Ideal for transcribing lectures, meetings, or interviews.
         """,
     )
 
@@ -138,6 +155,8 @@ server.
             if args.record != "default":
                 settings = load_audio_settings(args.record)
             await audio_recorder(settings)
+        elif args.text_to_speech:
+            text_to_speech()
         elif args.translate:
             azure_translator(*args.translate)
         else:

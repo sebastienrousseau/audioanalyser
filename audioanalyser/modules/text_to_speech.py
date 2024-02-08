@@ -1,3 +1,18 @@
+# Copyright (C) 2023-2024 Sebastien Rousseau.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+# implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
 import azure.cognitiveservices.speech as speechsdk
 import logging
 import os
@@ -16,14 +31,6 @@ logger = logging.getLogger("AzureTextToSpeech")
 class Config:
     """
     Configuration parameters for the Azure Text-to-Speech API.
-
-    Attributes:
-        - api_key (str): The API key for the Azure Text-to-Speech API.
-        - region (str): The Azure region where the Text-to-Speech API is
-        located.
-        - OUTPUT_FOLDER (str): The folder path where the synthesized audio
-        files will be saved.
-        - audio_extension (str): The audio file extension for the output files.
     """
 
     def __init__(self):
@@ -36,10 +43,6 @@ class Config:
     def validate(self):
         """
         Validate the configuration parameters.
-
-        Raises:
-            EnvironmentError: If any required environment variables
-            are missing.
         """
         required_vars = [
             self.api_key,
@@ -48,89 +51,112 @@ class Config:
             self.audio_extension
         ]
         if any(var is None for var in required_vars):
-            missing = [
-                var for var, value in locals().items() if value is None
-            ]
-            logger.error(
-                f"Missing environment variables: {', '.join(missing)}"
+            missing = ', '.join(
+                [
+                    name for name,
+                    var in zip(
+                        [
+                            "api_key",
+                            "region",
+                            "OUTPUT_FOLDER",
+                            "audio_extension"
+                        ], required_vars
+                    ) if var is None]
             )
-            raise EnvironmentError(
-                "Missing required environment variables."
-            )
+            logger.error(f"Missing environment variables: {missing}")
+            raise EnvironmentError("Missing required environment variables.")
 
 
 class TextToSpeech:
     """
     Synthesizes speech from text using the Azure Text-to-Speech API.
-
-    Args:
-        config (Config): The configuration parameters for the Azure
-        Text-to-Speech API.
-
-    Attributes:
-        config (Config): The configuration parameters for the Azure
-        Text-to-Speech API.
     """
 
     def __init__(self, config):
         self.config = config
 
-    def synthesize_text(self, text: str, filename: str):
+    def synthesize_text(
+        self,
+        text: str,
+        language: str = "en-GB",
+        voice_name: str = "en-GB-RyanNeural"
+    ):
         """
-        Synthesize speech from text and save it to an audio file.
-
-        Args:
-            text (str): The text to synthesize.
-            filename (str): The base name for the output audio file,
-            without extension.
+        Synthesize speech from text using specified settings.
         """
-        speech_config = speechsdk.SpeechConfig(
-            subscription=self.config.api_key, region=self.config.region
-        )
-
-        # Set the language
-        speech_config.speech_synthesis_language = "en-GB"  # Language setting
-
-        # Optionally, specify a voice name
-        # Configure speech synthesis
-        speech_config.speech_synthesis_voice_name = "en-GB-RyanNeural"
-
-        synthesizer = speechsdk.SpeechSynthesizer(speech_config=speech_config)
-        result = synthesizer.speak_text_async(text).get()
-
-        if result.reason == speechsdk.ResultReason.SynthesizingAudioCompleted:
-
-            PROJECT_ROOT = Path(__file__).resolve().parents[2]
-            OUTPUT_FOLDER = PROJECT_ROOT / os.getenv("RECORDS_FOLDER")
-            self.config.OUTPUT_FOLDER = os.path.join(
-                PROJECT_ROOT, OUTPUT_FOLDER
+        try:
+            speech_config = speechsdk.SpeechConfig(
+                subscription=self.config.api_key, region=self.config.region
             )
+            speech_config.speech_synthesis_language = language
+            speech_config.speech_synthesis_voice_name = voice_name
 
-            # Ensure the output directory exists
-            if not os.path.exists(self.config.OUTPUT_FOLDER):
-                os.makedirs(self.config.OUTPUT_FOLDER)
+            synthesizer = speechsdk.SpeechSynthesizer(
+                speech_config=speech_config
+            )
+            result = synthesizer.speak_text_async(text).get()
 
-            # Construct the output file path correctly
-            output_path = Path(
-                self.config.OUTPUT_FOLDER
-            ) / f"{filename}.{self.config.audio_extension}"
+            if (result.reason ==
+                    speechsdk.ResultReason.SynthesizingAudioCompleted):
+                logger.info("Successfully synthesized speech from text.")
+                return result.audio_data
 
-            with open(output_path, "wb") as audio_file:
-                audio_file.write(result.audio_data)
-            logger.info(f"Audio file saved to {output_path}")
-        else:
-            logger.error("Failed to synthesize speech from text.")
+            else:
+                if result.error_details:
+                    reason_for_failure = result.error_details
+                else:
+                    reason_for_failure = "Unknown error."
+
+                error_message = (
+                    f"Failed to synthesize speech from text. "
+                    f"Reason: {reason_for_failure}"
+                )
+                logger.error(error_message)
+
+                return None
+        except Exception as e:
+            logger.error(f"An error occurred during speech synthesis: {e}")
+            raise
 
 
-def text_to_speech():
+def text_to_speech(
+    text=None,
+    name=None,
+    language="en-GB",
+    voice_name="en-GB-RyanNeural"
+):
+    """
+    Convert text to speech using the Azure Text-to-Speech API.
+    """
+    # Validate arguments
+    if not text or not isinstance(text, str):
+        raise ValueError("Text must be a non-empty string.")
+    if not name or not isinstance(name, str):
+        raise ValueError("Name must be a non-empty string.")
+    if not isinstance(language, str) or not language:
+        raise ValueError("Language must be a non-empty string.")
+    if not isinstance(voice_name, str) or not voice_name:
+        raise ValueError("Voice name must be a non-empty string.")
+
     try:
         config = Config()
-        tts = TextToSpeech(config)
-        # Example usage, replace "Hello, World!" and "output_filename" with
-        # your desired input and file name.
-        tts.synthesize_text("Thank you for your time today!", "text_to_speech")
+        tts_processor = TextToSpeech(config)
+        audio_data = tts_processor.synthesize_text(text, language, voice_name)
+
+        if audio_data:
+            output_path = Path(
+                config.OUTPUT_FOLDER
+            ) / f"{name}{config.audio_extension}"
+            if not os.path.exists(config.OUTPUT_FOLDER):
+                os.makedirs(config.OUTPUT_FOLDER)
+            with open(output_path, "wb") as audio_file:
+                audio_file.write(audio_data)
+            logger.info(f"Audio file saved to {output_path}")
+        else:
+            logger.error("No audio data received from synthesis.")
     except Exception as e:
-        logger.error(f"Failed to synthesize text to speech: {e}")
+        logger.error(f"Script execution failed: {e}")
+        raise
 
 
 if __name__ == "__main__":

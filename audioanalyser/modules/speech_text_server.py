@@ -12,6 +12,7 @@
 # implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+#
 
 import asyncio
 import cherrypy
@@ -32,6 +33,7 @@ from audioanalyser.modules.transcribe_audio_files import (
 )
 from audioanalyser.modules.analyze_text_files import analyze_text_files
 from audioanalyser.modules.azure_translator import azure_translator
+from audioanalyser.modules.text_to_speech import text_to_speech
 
 
 class SpeechTextAnalysisServer:
@@ -75,6 +77,53 @@ class SpeechTextAnalysisServer:
             cherrypy.response.status = 500
             return {
                 "error": "An error occurred during speech-to-text processing"
+            }
+
+    @cherrypy.expose
+    @cherrypy.tools.json_out()
+    def text_to_speech(
+        self, text, name, language="en-GB", voice_name="en-GB-RyanNeural"
+    ):
+        """
+        Endpoint to convert text to speech.
+
+        Args:
+
+            text (str): The text to convert to speech.
+            name (str): The name of the audio file.
+            language (str, optional): The language of the audio. Defaults
+            to "en-GB".
+            voice_name (str, optional): The voice of the audio. Defaults
+            to "en-GB-RyanNeural".
+
+        Raises:
+
+            Exception: If there is an error during the text-to-speech process.
+
+        """
+        try:
+            # Redirect stdout to capture logs
+            old_stdout = sys.stdout
+            sys.stdout = log_capture_string = io.StringIO()
+
+            # Run the text-to-speech process
+            text_to_speech(text, name, language, voice_name)
+
+            # Reset stdout and get log output
+            sys.stdout = old_stdout
+            log_output = log_capture_string.getvalue()
+
+            return {
+                "result": "Processing completed",
+                "logs": log_output,
+            }
+        except Exception as e:
+            cherrypy.log(
+                f"Error during text-to-speech processing: {str(e)}"
+            )
+            cherrypy.response.status = 500
+            return {
+                "error": "An error occurred during text-to-speech processing"
             }
 
     @cherrypy.expose

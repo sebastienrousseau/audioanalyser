@@ -86,16 +86,22 @@ width="261"
       - [Usage](#usage-4)
       - [Customization and Scalability](#customization-and-scalability)
       - [Advanced Technology Integration](#advanced-technology-integration)
-    - [Transcribe Audio Files Module](#transcribe-audio-files-module)
+    - [Text-to-Speech Synthesis Module](#text-to-speech-synthesis-module)
       - [Key Features](#key-features-5)
       - [How It Works](#how-it-works-4)
       - [Usage](#usage-5)
       - [Customization and Versatility](#customization-and-versatility)
       - [Scalability and Integration](#scalability-and-integration)
-    - [Translations Module](#translations-module)
+    - [Transcribe Audio Files Module](#transcribe-audio-files-module)
       - [Key Features](#key-features-6)
       - [How It Works](#how-it-works-5)
       - [Usage](#usage-6)
+      - [Customization and Versatility](#customization-and-versatility-1)
+      - [Scalability and Integration](#scalability-and-integration-1)
+    - [Translations Module](#translations-module)
+      - [Key Features](#key-features-7)
+      - [How It Works](#how-it-works-6)
+      - [Usage](#usage-7)
       - [Supported Languages](#supported-languages)
       - [Error Handling and Logging](#error-handling-and-logging)
       - [Extensibility](#extensibility)
@@ -109,6 +115,7 @@ width="261"
 
 - **Audio Recording**: Record audio files and conversations.
 - **Speech to Text**: Convert spoken language into text using Azure's speech-to-text service.
+- **Text to Speech**: Convert text into spoken language using Azure's text-to-speech service.
 - **Instant Transcription:** Instantly transcribe audio files and recordings into text.
 - **Text Analysis**: Analyze text for various features using Azure's text analytics service.
 - **Recommendations:** Get actionable recommendations based on the results of the analysis.
@@ -152,6 +159,7 @@ Audio Analyser is built on Azure Cognitive Services for speech and language proc
 
 - **Audio Recorder** - record audio clips
 - **Speech-to-Text** - transcribe audio
+- **Text-to-Speech** - convert text to speech
 - **Text Analytics** - analyze transcripts
 - **Recommendation Generator** - suggest actions
 - **Web Server** - handle API requests
@@ -389,6 +397,43 @@ The Speech Text Server Module in Audio Analyser is a robust server-side componen
 - The module's architecture allows for easy integration with additional AI services and tools for enhanced functionality.
 
 The Speech Text Server Module is crucial for transforming raw audio data into actionable textual information, thereby playing a vital role in the Audio Analyser's capability to deliver comprehensive audio analysis solutions.
+
+---
+
+### Text-to-Speech Synthesis Module
+
+The Text-to-Speech Synthesis Module in the application is a highly efficient component crafted to transform text into spoken audio using Azure's cutting-edge Text-to-Speech API. This module stands out as a crucial instrument for generating audible content from textual data, facilitating diverse applications such as audiobook production, voice notifications, or enhancing accessibility features.
+
+#### Key Features
+
+- **Superior Voice Quality**: Employs Azure's Text-to-Speech API to produce clear and natural-sounding voice outputs from text.
+- **Customizable Voice Attributes**: Offers flexibility in choosing voice tones, accents, and languages to suit varied requirements.
+- **Efficient Error Management**: Features advanced error detection and handling to ensure high reliability across different operational scenarios.
+- **Diverse Output Formats**: Supports saving synthesized speech in various audio file formats, accommodating different usage contexts.
+
+#### How It Works
+
+- **Text Input Processing**: Accepts textual data as input, which can range from simple sentences to comprehensive paragraphs.
+- **Speech Synthesis**: Leverages Azure's API to convert text into digital speech with options for customizing voice properties.
+- **Error Handling**: Implements robust mechanisms to manage errors, ensuring smooth and consistent audio output generation.
+- **Audio File Saving**: Outputs the synthesized speech into designated audio formats, ready for playback or integration into other systems.
+
+#### Usage
+
+- Input the desired text into the module via its programming interface.
+- Configure the module settings, including voice type and output format preferences.
+- Trigger the text-to-speech synthesis process through the module's execution command.
+- Retrieve the generated audio file from the specified output location.
+
+#### Customization and Versatility
+
+- Enables extensive customization of voice characteristics and speech parameters, enhancing the module's adaptability to different text types and use cases.
+- Designed to process a wide range of textual inputs, making it versatile for various applications and user needs.
+
+#### Scalability and Integration
+
+- Scalable architecture allows for handling growing amounts of text inputs efficiently, suitable for both small and extensive text-to-speech conversion tasks.
+- Easily integrates with Azure services and other components within the application ecosystem, contributing to a seamless operational flow.
 
 ---
 

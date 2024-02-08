@@ -214,6 +214,32 @@
             </div>
 
             <!-- Row 1 -->
+            <div class="col-lg-12 grid-margin stretch-card">
+              <div class="card h-auto">
+                  <div class="card-body center text-center">
+                      <img src="https://kura.pro/audioanalyser/images/icons/icon-microphone.svg" alt="Microphone" class="img-fluid" width="100" height="100" style="filter: hue-rotate(180deg);" />
+                      <h2 class="text-center">Audio Folder Files List</h2>
+                      <p class="card-description text-center">List of recorded audio files that are available for processing. This list will be updated automatically when new files are recorded or uploaded.</p>
+                      <!-- Table for Displaying Files -->
+                      <table id="audioFilesTable" class="table mt-4">
+                          <thead>
+                              <tr>
+                                  <th class="text-middle">File Name</th>
+                                  <th class="text-middle">Action</th>
+                              </tr>
+                          </thead>
+                          <tbody>
+                              <!-- File list will be populated here -->
+                          </tbody>
+                      </table>
+                      <br />
+                      <button onclick="listAudioFiles()" class="btn btn-block btn-lg fs-6 btn-danger">Refresh List</button>
+                  </div>
+              </div>
+            </div>
+          <!-- #End Row 1 -->
+
+            <!-- Row 2 -->
             <div class="row">
               <div class="col-lg-6 grid-margin stretch-card">
                 <div class="card h-auto">
@@ -221,40 +247,34 @@
                     <img src="https://kura.pro/audioanalyser/images/icons/icon-microphone.svg" alt="Microphone" class="img-fluid" width="100" height="100" />
                     <h2 class="text-center">Audio Recording</h2>
                     <p class="card-description text-center">The Audio Recording functionality enables users to record and save audio for a specified duration, complete with progress visualization and post-recording file information display.</p>
-                    <br />
                     <!-- Automated Transcription Section -->
                     <pre id="audioRecording" class="text-success fs-6"></pre>
-                    <br /><br />
                     <button onclick="startRecording()" class="btn btn-block btn-lg fs-6 btn-danger">Record</button>
-                    
                   </div>
                 </div>
               </div>
-              <div class="col-lg-6 grid-margin stretch-card">
-                <div class="card h-auto">
-                    <div class="card-body center text-center">
-                        <img src="https://kura.pro/audioanalyser/images/icons/icon-microphone.svg" alt="Microphone" class="img-fluid" width="100" height="100" style="filter: hue-rotate(180deg);" />
-                        <h2 class="text-center">Audio Folder Files List</h2>
-                        <p class="card-description text-center">List of recorded audio files that are available for processing. This list will be updated automatically when new files are recorded or uploaded.</p>
-                        <!-- Table for Displaying Files -->
-                        <table id="audioFilesTable" class="table mt-4">
-                            <thead>
-                                <tr>
-                                    <th class="text-start">File Name</th>
-                                    <th class="text-start">Action</th>
-                                </tr>
-                            </thead>
-                            <tbody class="text-start">
-                                <!-- File list will be populated here -->
-                            </tbody>
-                        </table>
-                        <br />
-                        <button onclick="listAudioFiles()" class="btn btn-block btn-lg fs-6 btn-danger">Refresh List</button>
-                    </div>
+              <!-- #End Row 2 -->
+
+
+            <!-- Row 3 -->
+            <div class="col-lg-6 grid-margin stretch-card">
+              <div class="card h-auto">
+                <div class="card-body center text-center">
+                  <img src="https://kura.pro/audioanalyser/images/icons/icon-text-to-speech.webp" alt="Text to Speech" class="img-fluid" width="100" height="100" />
+                  <h2 class="text-center">Text to Speech</h2>
+                  <p class="card-description text-center">The Text to Speech Service offers a streamlined way to convert your text into speech. With a simple click, you can initiate the conversion of all your entered text.</p>
+                  <br />
+                  <!-- Text to Speech Input Section -->
+                  <textarea id="textToConvert" class="form-control" rows="6" placeholder="Enter text here..."></textarea>
+                  <br />
+                  <button onclick="convertTextToSpeech()" class="btn btn-block btn-lg fs-6 btn-danger">Convert Text</button>
+                  <br /><br />
+                  <!-- Text to Speech Results Section -->
+                  <pre id="textToSpeechResults" class="text-success fs-6"></pre>
                 </div>
               </div>
             </div>
-            <!-- #End Row 1 -->
+            <!-- #End Row 3 -->
 
             <!-- Row 2 -->
             <div class="row">
@@ -552,72 +572,43 @@
       /**
        * Fetches and lists audio files.
        */
-       function listAudioFiles() {
-          fetch('/list_audio_files', { method: 'GET' })
-              .then(response => {
-                  if (!response.ok) {
-                      throw new Error('Network response was not ok');
-                  }
-                  return response.json();
-              })
-              .then(files => {
-                  const tableBody = document.getElementById('audioFilesTable').getElementsByTagName('tbody')[0];
-                  tableBody.innerHTML = '';
+      function listAudioFiles() {
+        fetch('/list_audio_files', { method: 'GET' })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(files => {
+                const tableBody = document.getElementById('audioFilesTable').getElementsByTagName('tbody')[0];
+                tableBody.innerHTML = '';
 
-                  files.forEach(file => {
-                      const row = tableBody.insertRow();
+                files.forEach(file => {
+                    const row = tableBody.insertRow();
+                    row.style.verticalAlign = 'middle';
+                    row.className = 'table-light';
 
-                      // Create a cell for the file name
-                      const fileNameCell = row.insertCell(0);
-                      fileNameCell.textContent = file.name;
+                    // Create a cell for the file name
+                    const fileNameCell = row.insertCell(0);
+                    fileNameCell.textContent = file.name;
 
-                      // Create a cell for the audio player
-                      const audioCell = row.insertCell(1);
-                      const audioPlayer = document.createElement('audio');
-                      audioPlayer.controls = true; // Show controls for play, pause, etc.
-                      const source = document.createElement('source');
-                      source.src = `/serve_audio?filename=${encodeURIComponent(file.name)}`; // Use the CherryPy endpoint
-                      source.type = 'audio/wav'; // Adjust the type based on your audio file format
-                      audioPlayer.appendChild(source);
-                      audioCell.appendChild(audioPlayer);
-                  });
-              })
-              .catch(error => {
-                  console.error('Error:', error);
-                  alert('Error fetching file list.');
-              });
+                    // Create a cell for the audio player
+                    const audioCell = row.insertCell(1);
+                    const audioPlayer = document.createElement('audio');
+                    audioPlayer.controls = true; // Show controls for play, pause, etc.
+                    const source = document.createElement('source');
+                    source.src = `/serve_audio?filename=${encodeURIComponent(file.name)}`; // Use the CherryPy endpoint
+                    source.type = 'audio/wav'; // Adjust the type based on your audio file format
+                    audioPlayer.appendChild(source);
+                    audioCell.appendChild(audioPlayer);
+                });
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error fetching file list.');
+            });
       }
-
-      // function listAudioFiles() {
-      //     fetch('/list_audio_files', { method: 'GET' })
-      //     .then(response => {
-      //         if (!response.ok) {
-      //             throw new Error('Network response was not ok');
-      //         }
-      //         return response.json();
-      //     })
-      //     .then(files => {
-      //         const tableBody = document.getElementById('audioFilesTable').getElementsByTagName('tbody')[0];
-      //         tableBody.innerHTML = '';
-
-      //         files.forEach(file => {
-      //             const row = tableBody.insertRow();
-      //             const fileNameCell = row.insertCell(0);
-      //             fileNameCell.textContent = file.name;
-
-      //             const actionCell = row.insertCell(1);
-      //             const downloadButton = document.createElement('button');
-      //             downloadButton.classList.add('btn', 'btn-sm', 'btn-link');
-      //             downloadButton.textContent = 'Download';
-      //             downloadButton.onclick = () => downloadFile(file.name);
-      //             actionCell.appendChild(downloadButton);
-      //         });
-      //     })
-      //     .catch(error => {
-      //         console.error('Error:', error);
-      //         alert('Error fetching file list.');
-      //     });
-      // }
 
       /**
        * Hides the transcripts list.
@@ -649,6 +640,28 @@
       function hideTranslations() {
           const container = document.getElementById('translationsList');
           container.innerHTML = ''; // Clear the translations list
+      }
+      /**
+       * Converts text to speech using a server endpoint.
+       * @param {string} text - The text to convert to speech.
+       * @param {string} name - The name for the resulting audio file.
+       * @param {string} language - The language of the speech. Defaults to "en-GB".
+       * @param {string} voiceName - The voice model to use. Defaults to "en-GB-RyanNeural".
+       */
+      async function convertTextToSpeech() {
+        const text = document.getElementById('textToConvert').value;
+
+        const params = new URLSearchParams({
+          text: text,
+          name: "test",
+        });
+
+        await fetch('/text_to_speech?' + params.toString(), {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+        })
       }
 
       /**

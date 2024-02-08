@@ -214,50 +214,76 @@
             </div>
 
             <!-- Row 1 -->
-            <div class="row">
-              <div class="col-lg-6 grid-margin stretch-card">
-                <div class="card h-auto">
+            <div class="col-lg-12 grid-margin stretch-card">
+              <div class="card h-auto">
                   <div class="card-body center text-center">
-                    <h2 class="text-start">Audio Recording</h2>
-                    <p class="card-description text-start">The Audio Recording functionality enables users to record and save audio for a specified duration, complete with progress visualization and post-recording file information display.</p>
-                    <!-- Automated Transcription Section -->
-                    <button onclick="startRecording()" class="btn btn-block btn-lg fs-6 btn-danger">Record</button>
-                    <pre id="audioRecording" class="text-success fs-6"></pre>
+                      <img src="https://kura.pro/audioanalyser/images/icons/icon-microphone.svg" alt="Microphone" class="img-fluid" width="100" height="100" style="filter: hue-rotate(180deg);" />
+                      <h2 class="text-center">Audio Folder Files List</h2>
+                      <p class="card-description text-center">List of recorded audio files that are available for processing. This list will be updated automatically when new files are recorded or uploaded.</p>
+                      <!-- Table for Displaying Files -->
+                      <table id="audioFilesTable" class="table mt-4">
+                          <thead>
+                              <tr>
+                                  <th class="text-middle">File Name</th>
+                                  <th class="text-middle">Action</th>
+                              </tr>
+                          </thead>
+                          <tbody>
+                              <!-- File list will be populated here -->
+                          </tbody>
+                      </table>
+                      <br />
+                      <button onclick="listAudioFiles()" class="btn btn-block btn-lg fs-6 btn-danger">Refresh List</button>
                   </div>
-                </div>
-              </div>
-              <div class="col-lg-6 grid-margin stretch-card">
-                <div class="card h-auto">
-                    <div class="card-body center text-center">
-                        <h2 class="text-start">Audio Files List</h2>
-                        <p class="card-description text-start">List of recorded audio files.</p>
-                        <button onclick="listAudioFiles()" class="btn btn-block btn-lg fs-6 btn-danger">Refresh List</button>
-
-                        <!-- Table for Displaying Files -->
-                        <table id="audioFilesTable" class="table mt-4">
-                            <thead>
-                                <tr>
-                                    <th class="text-start">File Name</th>
-                                    <th class="text-start">Action</th>
-                                </tr>
-                            </thead>
-                            <tbody class="text-start">
-                                <!-- File list will be populated here -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
               </div>
             </div>
-            <!-- #End Row 1 -->
+          <!-- #End Row 1 -->
 
             <!-- Row 2 -->
             <div class="row">
               <div class="col-lg-6 grid-margin stretch-card">
                 <div class="card h-auto">
                   <div class="card-body center text-center">
-                    <h2 class="text-start">Audio to Text Generation</h2>
-                    <p class="card-description text-start">The Audio-to-Text Service offers a streamlined way to convert your audio files into text. With a simple click, you can initiate the transcription of all your uploaded audio files.</p>
+                    <img src="https://kura.pro/audioanalyser/images/icons/icon-microphone.svg" alt="Microphone" class="img-fluid" width="100" height="100" />
+                    <h2 class="text-center">Audio Recording</h2>
+                    <p class="card-description text-center">The Audio Recording functionality enables users to record and save audio for a specified duration, complete with progress visualization and post-recording file information display.</p>
+                    <!-- Automated Transcription Section -->
+                    <pre id="audioRecording" class="text-success fs-6"></pre>
+                    <button onclick="startRecording()" class="btn btn-block btn-lg fs-6 btn-danger">Record</button>
+                  </div>
+                </div>
+              </div>
+              <!-- #End Row 2 -->
+
+
+            <!-- Row 3 -->
+            <div class="col-lg-6 grid-margin stretch-card">
+              <div class="card h-auto">
+                <div class="card-body center text-center">
+                  <img src="https://kura.pro/audioanalyser/images/icons/icon-text-to-speech.webp" alt="Text to Speech" class="img-fluid" width="100" height="100" />
+                  <h2 class="text-center">Text to Speech</h2>
+                  <p class="card-description text-center">The Text to Speech Service offers a streamlined way to convert your text into speech. With a simple click, you can initiate the conversion of all your entered text.</p>
+                  <br />
+                  <!-- Text to Speech Input Section -->
+                  <textarea id="textToConvert" class="form-control" rows="6" placeholder="Enter text here..."></textarea>
+                  <br />
+                  <button onclick="convertTextToSpeech()" class="btn btn-block btn-lg fs-6 btn-danger">Convert Text</button>
+                  <br /><br />
+                  <!-- Text to Speech Results Section -->
+                  <pre id="textToSpeechResults" class="text-success fs-6"></pre>
+                </div>
+              </div>
+            </div>
+            <!-- #End Row 3 -->
+
+            <!-- Row 2 -->
+            <div class="row">
+              <div class="col-lg-6 grid-margin stretch-card">
+                <div class="card h-auto">
+                  <div class="card-body center text-center">
+                    <img src="https://kura.pro/audioanalyser/images/icons/icon-insight.webp" alt="Insight" class="img-fluid" width="100" height="100" />
+                    <h2 class="text-center">Speech-To-Text</h2>
+                    <p class="card-description text-center">The Speech-To-Text Service offers a streamlined way to convert your audio files into text. With a simple click, you can initiate the transcription of all your uploaded audio files.</p>
                     <!-- Automated Transcription Section -->
                     <button onclick="processAllSpeechToText()" class="btn btn-block btn-lg fs-6 btn-danger">Process All Audio Files</button>
                     <pre id="speechToTextResults" class="text-success fs-6"></pre>
@@ -267,8 +293,9 @@
               <div class="col-lg-6 grid-margin stretch-card">
                 <div class="card h-auto">
                   <div class="card-body center text-center">
-                    <h2 class="text-start">Audio Transcripts</h2>
-                    <p class="card-description text-start">The Transcripts Service is a powerful tool that effortlessly converts speech into text, offering quick and accurate transcriptions in over 100 languages and variants.</p>
+                    <img src="https://kura.pro/audioanalyser/images/icons/icon-insight.webp" alt="Insight" class="img-fluid" width="100" height="100" style="filter: hue-rotate(180deg);" />
+                    <h2 class="text-center">Audio Transcripts</h2>
+                    <p class="card-description text-center">The Transcripts Service is a powerful tool that effortlessly converts speech into text, offering quick and accurate transcriptions in over 100 languages and variants.</p>
                     <button onclick="showTranscripts()" class="btn btn-block btn-lg fs-6 btn-danger">Show</button>
                     <button onclick="hideTranscripts()" class="btn btn-block btn-lg fs-6 btn-outline-dark">Hide</button>
                     <ul id="transcriptsList" class="text-start"></ul>
@@ -283,8 +310,9 @@
               <div class="col-lg-6 grid-margin stretch-card">
                 <div class="card h-auto">
                   <div class="card-body center text-center">
-                    <h2 class="text-start">Sentiment Analysis</h2>
-                      <p class="card-description text-start">Decodes emotions in text, labeling sentiments as negative, neutral, or positive with high accuracy.</p>
+                    <img src="https://kura.pro/audioanalyser/images/icons/icon-analysis.webp" alt="Analysis" class="img-fluid" width="100" height="100" />
+                    <h2 class="text-center">Sentiment Analysis</h2>
+                      <p class="card-description text-center"> The Sentiment Analysis Service is a powerful tool that effortlessly decodes the emotions in text, labeling sentiments as negative, neutral, or positive with high accuracy.</p>
                       <button onclick="processAllAnalysis()" class="btn btn-block btn-lg fs-6 btn-danger">Run</button>
                       <button onclick="checkAnalysisStatus()" class="btn btn-block btn-lg fs-6 btn-outline-dark">Status</button>
                       <pre id="allAnalysisAllResults" class="text-success fs-6"></pre>
@@ -294,8 +322,9 @@
                 <div class="col-lg-6 grid-margin stretch-card">
                   <div class="card h-auto">
                     <div class="card-body center text-center">
-                      <h2 class="text-start">Sentiment Reports</h2>
-                      <p class="card-description text-start">Interprets and evaluates spoken interactions, delivering insightful and detailed customer sentiment analyses.</p>
+                      <img src="https://kura.pro/audioanalyser/images/icons/icon-analysis.webp" alt="Analysis" class="img-fluid" width="100" height="100" style="filter: hue-rotate(180deg);" />
+                      <h2 class="text-center">Sentiment Reports</h2>
+                      <p class="card-description text-center">The Sentiment Reports Service is a powerful tool that interprets and evaluates spoken interactions, delivering insightful and detailed customer sentiment analyses.</p>
                       <button onclick="showReports()" class="btn btn-block btn-lg fs-6 btn-danger">Show</button>
                       <button onclick="hideReports()" class="btn btn-block btn-lg fs-6 btn-outline-dark">Hide</button>
                       <ul id="reportsList" class="text-start"></ul>
@@ -310,8 +339,9 @@
                 <div class="col-lg-6 grid-margin stretch-card">
                   <div class="card h-auto">
                     <div class="card-body center text-center">
-                      <h2 class="text-start">Generate Summaries</h2>
-                      <p class="card-description text-start">This start the process of generating summaries for all the transcripts.</p>
+                      <img src="https://kura.pro/audioanalyser/images/icons/icon-recommendation.webp" alt="Recommendation" class="img-fluid" width="100" height="100" />
+                      <h2 class="text-center">Generate Summaries</h2>
+                      <p class="card-description text-center">The Summaries Service is a powerful tool that effortlessly generates concise and accurate executive summaries, delivering insightful and detailed customer insights.</p>
                       <button onclick="processAllRecommendations()" class="btn btn-block btn-lg fs-6 btn-danger">Generate</button>
                       <pre id="allRecommendationsResults" class="text-success fs-6"></pre>
                     </div>
@@ -320,8 +350,9 @@
                 <div class="col-lg-6 grid-margin stretch-card">
                   <div class="card h-auto">
                     <div class="card-body center text-center">
-                      <h2 class="text-start">Executive Summaries</h2>
-                      <p class="card-description text-start">This extract all the information from the generated summaries.</p>
+                      <img src="https://kura.pro/audioanalyser/images/icons/icon-recommendation.webp" alt="Recommendation" class="img-fluid" width="100" height="100" style="filter: hue-rotate(180deg);" />
+                      <h2 class="text-center">Executive Summaries</h2>
+                      <p class="card-description text-center">Extracts instantaneously each of the generated executive summaries and provides a detailed analysis of the customer sentiment.</p>
                       <button onclick="showSummaries()" class="btn btn-block btn-lg fs-6 btn-danger">Show</button>
                       <button onclick="hideSummaries()" class="btn btn-block btn-lg fs-6 btn-outline-dark">Hide</button>
                       <ul id="summariesList" class="text-start"></ul>
@@ -333,26 +364,162 @@
           <!-- Row 5 -->
           <div class="row">
             <div class="col-lg-6 grid-margin stretch-card">
-                <div class="card h-auto">
-                  <div class="card-body center text-center">
-                    <h2 class="text-start">Generate Translations</h2>
-                    <p class="card-description text-start">
-                      Enter the country code (e.g., fr, de, es) to start the process of generating translations for all the transcripts.
+              <div class="card h-auto">
+                <div class="card-body center text-center">
+                  <img src="https://kura.pro/audioanalyser/images/icons/icon-translation.webp" alt="Translation" class="img-fluid" width="100" height="100" />
+                  <h2 class="text-center">Generate Translations</h2>
+                  <p class="card-description text-center">
+                    Select one or multiple languages to start the process of generating translations for all the audio transcripts. Currently we support over 100 languages and variants.
                   </p>
-          
-                  <!-- Input Field for Country Code -->
-                  <input type="text" id="countryCodeInput" class="form-control mb-3" placeholder="Enter country code">
-          
-                  <button onclick="processAllTranslations()" class="btn btn-block btn-lg fs-6 btn-danger">Generate</button>
-                  <pre id="allTranslationsResults" class="text-success fs-6"></pre>
-              </div>
-              </div>
+                  <div class="form-group mb-3" aria-label="Language selector">
+                    <select multiple="multiple" class="w-100 form-select form-select-lg mb-3" id="countryCodeInput" style="height: 200px;">
+                      <option disabled>Select one or multiple languages</option>
+                        <option value="af">Afrikaans</option>
+                        <option value="sq">Albanian</option>
+                        <option value="am">Amharic</option>
+                        <option value="ar">Arabic</option>
+                        <option value="hy">Armenian</option>
+                        <option value="as">Assamese</option>
+                        <option value="az">Azerbaijani (Latin)</option>
+                        <option value="bn">Bangla</option>
+                        <option value="ba">Bashkir</option>
+                        <option value="eu">Basque</option>
+                        <option value="bho">Bhojpuri</option>
+                        <option value="brx">Bodo</option>
+                        <option value="bs">Bosnian (Latin)</option>
+                        <option value="bg">Bulgarian</option>
+                        <option value="yue">Cantonese (Traditional)</option>
+                        <option value="ca">Catalan</option>
+                        <option value="lzh">Chinese (Literary)</option>
+                        <option value="zh">Chinese Simplified</option>
+                        <option value="zh">Chinese Traditional</option>
+                        <option value="sn">chiShona</option>
+                        <option value="hr">Croatian</option>
+                        <option value="cs">Czech</option>
+                        <option value="da">Danish</option>
+                        <option value="prs">Dari</option>
+                        <option value="dv">Divehi</option>
+                        <option value="doi">Dogri</option>
+                        <option value="nl">Dutch</option>
+                        <option value="en">English</option>
+                        <option value="et">Estonian</option>
+                        <option value="fo">Faroese</option>
+                        <option value="fj">Fijian</option>
+                        <option value="fil">Filipino</option>
+                        <option value="fi">Finnish</option>
+                        <option value="fr">French</option>
+                        <option value="fr">French (Canada)</option>
+                        <option value="gl">Galician</option>
+                        <option value="ka">Georgian</option>
+                        <option value="de">German</option>
+                        <option value="el">Greek</option>
+                        <option value="gu">Gujarati</option>
+                        <option value="ht">Haitian Creole</option>
+                        <option value="ha">Hausa</option>
+                        <option value="he">Hebrew</option>
+                        <option value="hi">Hindi</option>
+                        <option value="mww">Hmong Daw (Latin)</option>
+                        <option value="hu">Hungarian</option>
+                        <option value="is">Icelandic</option>
+                        <option value="ig">Igbo</option>
+                        <option value="id">Indonesian</option>
+                        <option value="ikt">Inuinnaqtun</option>
+                        <option value="iu">Inuktitut</option>
+                        <option value="iu">Inuktitut (Latin)</option>
+                        <option value="ga">Irish</option>
+                        <option value="it">Italian</option>
+                        <option value="ja">Japanese</option>
+                        <option value="kn">Kannada</option>
+                        <option value="ks">Kashmiri</option>
+                        <option value="kk">Kazakh</option>
+                        <option value="km">Khmer</option>
+                        <option value="rw">Kinyarwanda</option>
+                        <option value="tlh">Klingon</option>
+                        <option value="tlh">Klingon (plqaD)</option>
+                        <option value="gom">Konkani</option>
+                        <option value="ko">Korean</option>
+                        <option value="ku">Kurdish (Central)</option>
+                        <option value="kmr">Kurdish (Northern)</option>
+                        <option value="ky">Kyrgyz (Cyrillic)</option>
+                        <option value="lo">Lao</option>
+                        <option value="lv">Latvian</option>
+                        <option value="lt">Lithuanian</option>
+                        <option value="ln">Lingala</option>
+                        <option value="dsb">Lower Sorbian</option>
+                        <option value="lug">Luganda</option>
+                        <option value="mk">Macedonian</option>
+                        <option value="mai">Maithili</option>
+                        <option value="mg">Malagasy</option>
+                        <option value="ms">Malay (Latin)</option>
+                        <option value="ml">Malayalam</option>
+                        <option value="mt">Maltese</option>
+                        <option value="mi">Maori</option>
+                        <option value="mr">Marathi</option>
+                        <option value="mn">Mongolian (Cyrillic)</option>
+                        <option value="mn">Mongolian (Traditional)</option>
+                        <option value="my">Myanmar</option>
+                        <option value="ne">Nepali</option>
+                        <option value="nb">Norwegian</option>
+                        <option value="nya">Nyanja</option>
+                        <option value="or">Odia</option>
+                        <option value="ps">Pashto</option>
+                        <option value="fa">Persian</option>
+                        <option value="pl">Polish</option>
+                        <option value="pt">Portuguese (Brazil)</option>
+                        <option value="pt">Portuguese (Portugal)</option>
+                        <option value="pa">Punjabi</option>
+                        <option value="otq">Queretaro Otomi</option>
+                        <option value="ro">Romanian</option>
+                        <option value="run">Rundi</option>
+                        <option value="ru">Russian</option>
+                        <option value="sm">Samoan (Latin)</option>
+                        <option value="sr">Serbian (Cyrillic)</option>
+                        <option value="sr">Serbian (Latin)</option>
+                        <option value="st">Sesotho</option>
+                        <option value="nso">Sesotho sa Leboa</option>
+                        <option value="tn">Setswana</option>
+                        <option value="sd">Sindhi</option>
+                        <option value="si">Sinhala</option>
+                        <option value="sk">Slovak</option>
+                        <option value="sl">Slovenian</option>
+                        <option value="so">Somali (Arabic)</option>
+                        <option value="es">Spanish</option>
+                        <option value="sw">Swahili (Latin)</option>
+                        <option value="sv">Swedish</option>
+                        <option value="ty">Tahitian</option>
+                        <option value="ta">Tamil</option>
+                        <option value="tt">Tatar (Latin)</option>
+                        <option value="te">Telugu</option>
+                        <option value="th">Thai</option>
+                        <option value="bo">Tibetan</option>
+                        <option value="ti">Tigrinya</option>
+                        <option value="to">Tongan</option>
+                        <option value="tr">Turkish</option>
+                        <option value="tk">Turkmen (Latin)</option>
+                        <option value="uk">Ukrainian</option>
+                        <option value="hsb">Upper Sorbian</option>
+                        <option value="ur">Urdu</option>
+                        <option value="ug">Uyghur (Arabic)</option>
+                        <option value="uz">Uzbek (Latin)</option>
+                        <option value="vi">Vietnamese</option>
+                        <option value="cy">Welsh</option>
+                        <option value="xh">Xhosa</option>
+                        <option value="yo">Yoruba</option>
+                        <option value="yua">Yucatec Maya</option>
+                        <option value="zu">Zulu</option>
+                      </select>
+                    </div>
+                    <button onclick="processAllTranslations()" class="btn btn-block btn-lg fs-6 btn-danger">Generate</button>
+                    <pre id="allTranslationsResults" class="text-success fs-6"></pre>
+                  </div>
+                </div>
             </div>
             <div class="col-lg-6 grid-margin stretch-card">
               <div class="card h-auto">
                 <div class="card-body center text-center">
-                  <h2 class="text-start">Translations</h2>
-                  <p class="card-description text-start">This extract all the information from the generated translations.</p>
+                  <img src="https://kura.pro/audioanalyser/images/icons/icon-translation.webp" alt="Translation" class="img-fluid" width="100" height="100" style="filter: hue-rotate(180deg);" />
+                  <h2 class="text-center">Translations Reports</h2>
+                  <p class="card-description text-center">This extract all the information from the generated translations.</p>
                   <button onclick="showTranslations()" class="btn btn-block btn-lg fs-6 btn-danger">Show</button>
                   <button onclick="hideTranslations()" class="btn btn-block btn-lg fs-6 btn-outline-dark">Hide</button>
                   <ul id="translationsList" class="text-start"></ul>
@@ -361,7 +528,7 @@
             </div>
           </div>
         </div>
-          
+
           <!-- content-wrapper ends -->
           <!-- partial:../../partials/_footer.html -->
           <footer class="footer border-top mt-auto py-3">
@@ -386,57 +553,61 @@
        * @param {string} fileName - The name of the file to be downloaded.
        */
       function downloadFile(fileName) {
-          // Create an anchor element
-          let downloadLink = document.createElement('a');
-  
-          // Set the href attribute to the file's URL
-          downloadLink.href = `/resources/input/${fileName}`;
-  
-          // Optionally, set the download attribute to suggest a filename
-          downloadLink.download = fileName;
-  
-          // Append the link to the body (required for Firefox)
-          document.body.appendChild(downloadLink);
-  
-          // Programmatically click the link to trigger the download
-          downloadLink.click();
-  
-          // Remove the link from the document
-          document.body.removeChild(downloadLink);
+      // Create a new anchor element
+      let downloadLink = document.createElement('a');
+
+      // Set the href attribute to the file's URL
+      downloadLink.href = `/download_audio?filename=${encodeURIComponent(fileName)}`;
+
+      // Append the link to the body (required for Firefox)
+      document.body.appendChild(downloadLink);
+
+      // Programmatically click the link to trigger the download
+      downloadLink.click();
+
+      // Remove the link from the document
+      document.body.removeChild(downloadLink);
       }
-  
+
       /**
        * Fetches and lists audio files.
        */
       function listAudioFiles() {
-          fetch('/list_audio_files', { method: 'GET' })
-          .then(response => {
-              if (!response.ok) {
-                  throw new Error('Network response was not ok');
-              }
-              return response.json();
-          })
-          .then(files => {
-              const tableBody = document.getElementById('audioFilesTable').getElementsByTagName('tbody')[0];
-              tableBody.innerHTML = '';
+        fetch('/list_audio_files', { method: 'GET' })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(files => {
+                const tableBody = document.getElementById('audioFilesTable').getElementsByTagName('tbody')[0];
+                tableBody.innerHTML = '';
 
-              files.forEach(file => {
-                  const row = tableBody.insertRow();
-                  const fileNameCell = row.insertCell(0);
-                  fileNameCell.textContent = file.name;
+                files.forEach(file => {
+                    const row = tableBody.insertRow();
+                    row.style.verticalAlign = 'middle';
+                    row.className = 'table-light';
 
-                  const actionCell = row.insertCell(1);
-                  const downloadButton = document.createElement('button');
-                  downloadButton.classList.add('btn', 'btn-sm', 'btn-link');
-                  downloadButton.textContent = 'Download';
-                  downloadButton.onclick = () => downloadFile(file.name);
-                  actionCell.appendChild(downloadButton);
-              });
-          })
-          .catch(error => {
-              console.error('Error:', error);
-              alert('Error fetching file list.');
-          });
+                    // Create a cell for the file name
+                    const fileNameCell = row.insertCell(0);
+                    fileNameCell.textContent = file.name;
+
+                    // Create a cell for the audio player
+                    const audioCell = row.insertCell(1);
+                    const audioPlayer = document.createElement('audio');
+                    audioPlayer.controls = true; // Show controls for play, pause, etc.
+                    const source = document.createElement('source');
+                    source.src = `/serve_audio?filename=${encodeURIComponent(file.name)}`; // Use the CherryPy endpoint
+                    source.type = 'audio/wav'; // Adjust the type based on your audio file format
+                    audioPlayer.appendChild(source);
+                    audioCell.appendChild(audioPlayer);
+                });
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error fetching file list.');
+            });
       }
 
       /**
@@ -469,6 +640,28 @@
       function hideTranslations() {
           const container = document.getElementById('translationsList');
           container.innerHTML = ''; // Clear the translations list
+      }
+      /**
+       * Converts text to speech using a server endpoint.
+       * @param {string} text - The text to convert to speech.
+       * @param {string} name - The name for the resulting audio file.
+       * @param {string} language - The language of the speech. Defaults to "en-GB".
+       * @param {string} voiceName - The voice model to use. Defaults to "en-GB-RyanNeural".
+       */
+      async function convertTextToSpeech() {
+        const text = document.getElementById('textToConvert').value;
+
+        const params = new URLSearchParams({
+          text: text,
+          name: "test",
+        });
+
+        await fetch('/text_to_speech?' + params.toString(), {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+        })
       }
 
       /**
@@ -543,38 +736,40 @@
        * Processes all translations.
        */
        async function processAllTranslations() {
-    try {
-        // Retrieve the country code from the input field
-        const countryCode = document.getElementById('countryCodeInput').value;
+          try {
+              // Retrieve all selected options from the select element
+              const selectedOptions = document.getElementById('countryCodeInput').selectedOptions;
+              const countryCodes = Array.from(selectedOptions).map(option => option.value);
 
-        // Validate if the country code has been entered
-        if (!countryCode) {
-            alert('Please enter a country code.');
-            return;
-        }
+              // Join the country codes into a single string separated by commas
+              const countryCodeString = countryCodes.join(',');
 
-        // Prepare the request with the country code in the body
-        const response = await fetch('/process_all_translations', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ countryCode: countryCode })
-        });
+              // Validate if any country code has been selected
+              if (!countryCodeString) {
+                  alert('Please select at least one language.');
+                  return;
+              }
 
-        if (!response.ok) {
-            throw new Error('Network response was not ok');
-        }
+              // Prepare the request with the joined country codes in the body
+              const response = await fetch('/process_all_translations', {
+                  method: 'POST',
+                  headers: {
+                      'Content-Type': 'application/json'
+                  },
+                  body: JSON.stringify({ countryCode: countryCodeString }) // Send as a single string
+              });
 
-        const data = await response.json();
-        document.getElementById('allTranslationsResults').textContent = data.result;
-    } catch (error) {
-        console.error('Error:', error);
-        alert('Error processing translations.');
-    }
-}
+              if (!response.ok) {
+                  throw new Error('Network response was not ok');
+              }
 
-
+              const data = await response.json();
+              document.getElementById('allTranslationsResults').textContent = JSON.stringify(data.result);
+          } catch (error) {
+              console.error('Error:', error);
+              alert('Error processing translations.');
+          }
+      }
 
       /**
        * Shows transcripts.
@@ -806,7 +1001,7 @@
               alert('Error fetching or displaying translations.');
           });
       }
-      
+
       /**
        * Starts recording audio.
        */
@@ -862,6 +1057,7 @@
     <script src="../../assets/js/off-canvas.js"></script>
     <script src="../../assets/js/hoverable-collapse.js"></script>
     <script src="../../assets/js/misc.js"></script>
+    <script src="../../assets/js/bootstrap-multiselect.js"></script>
     <!-- endinject -->
     <!-- Custom js for this page -->
     <!-- End custom js for this page -->

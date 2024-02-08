@@ -115,3 +115,7 @@ ENV/
 # Database
 *.db-shm
 *.db-wal
+
+# Files
+analysis_status.txt
+recommendations_status.txt

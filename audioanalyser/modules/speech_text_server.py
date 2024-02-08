@@ -12,6 +12,7 @@
 # implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+#
 
 import asyncio
 import cherrypy
@@ -32,6 +33,7 @@ from audioanalyser.modules.transcribe_audio_files import (
 )
 from audioanalyser.modules.analyze_text_files import analyze_text_files
 from audioanalyser.modules.azure_translator import azure_translator
+from audioanalyser.modules.text_to_speech import text_to_speech
 
 
 class SpeechTextAnalysisServer:
@@ -75,6 +77,53 @@ class SpeechTextAnalysisServer:
             cherrypy.response.status = 500
             return {
                 "error": "An error occurred during speech-to-text processing"
+            }
+
+    @cherrypy.expose
+    @cherrypy.tools.json_out()
+    def text_to_speech(
+        self, text, name, language="en-GB", voice_name="en-GB-RyanNeural"
+    ):
+        """
+        Endpoint to convert text to speech.
+
+        Args:
+
+            text (str): The text to convert to speech.
+            name (str): The name of the audio file.
+            language (str, optional): The language of the audio. Defaults
+            to "en-GB".
+            voice_name (str, optional): The voice of the audio. Defaults
+            to "en-GB-RyanNeural".
+
+        Raises:
+
+            Exception: If there is an error during the text-to-speech process.
+
+        """
+        try:
+            # Redirect stdout to capture logs
+            old_stdout = sys.stdout
+            sys.stdout = log_capture_string = io.StringIO()
+
+            # Run the text-to-speech process
+            text_to_speech(text, name, language, voice_name)
+
+            # Reset stdout and get log output
+            sys.stdout = old_stdout
+            log_output = log_capture_string.getvalue()
+
+            return {
+                "result": "Processing completed",
+                "logs": log_output,
+            }
+        except Exception as e:
+            cherrypy.log(
+                f"Error during text-to-speech processing: {str(e)}"
+            )
+            cherrypy.response.status = 500
+            return {
+                "error": "An error occurred during text-to-speech processing"
             }
 
     @cherrypy.expose
@@ -132,6 +181,51 @@ class SpeechTextAnalysisServer:
             cherrypy.response.status = 500
             return {
                 "error": "An error occurred while fetching the file list"
+            }
+
+    @cherrypy.expose
+    def serve_audio(self, filename):
+        """
+        Endpoint to serve audio files.
+        """
+        try:
+            files_dir = "./resources/input"
+            full_path = os.path.abspath(os.path.join(files_dir, filename))
+            return cherrypy.lib.static.serve_file(
+                full_path, content_type="audio/wav"
+            )
+        except Exception as e:
+            cherrypy.log(f"Error serving audio file: {str(e)}")
+            cherrypy.response.status = 500
+            return {
+                "error": "An error occurred while serving the audio file"
+            }
+
+    @cherrypy.expose
+    def download_audio(self, filename):
+        """
+        Endpoint to trigger audio file download.
+        """
+        try:
+            files_dir = "./resources/input"
+            full_path = os.path.abspath(os.path.join(files_dir, filename))
+
+            # Set the 'Content-Disposition' header to suggest a filename
+            cherrypy.response.headers['Content-Disposition'] = (
+                f'attachment; filename="{filename}"'
+            )
+
+            # Serve the file for download
+            return cherrypy.lib.static.serve_file(
+                full_path,
+                content_type="application/octet-stream"
+            )
+        except Exception as e:
+            cherrypy.log(f"Error serving audio file for download: {str(e)}")
+            cherrypy.response.status = 500
+            return {
+                "error": "An error occurred while serving the audio file"
+                " for download"
             }
 
     @cherrypy.expose
@@ -349,7 +443,7 @@ class SpeechTextAnalysisServer:
             )
             thread.start()
 
-            message = "Translation process started for country code: "
+            message = "Translation process started: "
             result_message = message + str(countryCode)
             return {"result": result_message}
 

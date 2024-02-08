@@ -37,7 +37,7 @@ setup(
     license="Apache Software License",
     name='audioanalyser',
     version='0.0.5',
-    url='https://audioanalyser.pro',
+    url='https://audioanalyser.co',
     packages=find_packages(),
     install_requires=[
         'azure-cognitiveservices-speech>=1.34.0',

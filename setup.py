@@ -36,7 +36,7 @@ setup(
     long_description_content_type="text/markdown",
     license="Apache Software License",
     name='audioanalyser',
-    version='0.0.5',
+    version='0.0.6',
     url='https://audioanalyser.co',
     packages=find_packages(),
     install_requires=[

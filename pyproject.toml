@@ -20,7 +20,7 @@ datetime = "5.4"
 openai="1.11.1"
 python = "^3.9"
 python-dotenv="1.0.1"
-requests = "2.32.0"
+requests = "2.32.4"
 
 [build-system]
 requires = ["poetry-core"]

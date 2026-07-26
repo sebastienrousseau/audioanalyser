@@ -1,7 +1,7 @@
 <!-- markdownlint-disable MD033 MD041 -->
 
 <img
-src="https://kura.pro/audioanalyser/images/logos/audioanalyser.webp"
+src="https://cloudcdn.pro/audioanalyser/images/logos/audioanalyser.webp"
 align="right"
 alt="Audio Analyser's logo"
 height="261"
@@ -686,11 +686,11 @@ of [audioanalyser][05] for their help and support.
 [06]: https://codecov.io/github/sebastienrousseau/audioanalyser?branch=main "Codecov"
 [07]: https://pypi.org/project/audioanalyser/ "Audio Analyser on PyPI"
 
-[banner]: https://kura.pro/audioanalyser/images/titles/title-audioanalyser.webp "Speech-to-Text & Analysis: Easy, Fast, Accurate."
+[banner]: https://cloudcdn.pro/audioanalyser/images/titles/title-audioanalyser.webp "Speech-to-Text & Analysis: Easy, Fast, Accurate."
 [codecov-badge]: https://img.shields.io/codecov/c/github/sebastienrousseau/audioanalyser?style=for-the-badge&token=AaUxKfRiou 'Codecov badge'
 [diagram]: ./audio-analyser-architecture.png "Audio Analyser Architecture"
 [license-badge]: https://img.shields.io/pypi/l/audioanalyser?style=for-the-badge 'License badge'
 [pypi-badge]: https://img.shields.io/pypi/pyversions/audioanalyser.svg?style=for-the-badge 'PyPI badge'
 [pypi-downloads-badge]:https://img.shields.io/pypi/dm/audioanalyser.svg?style=for-the-badge 'PyPI Downloads badge'
 
-[divider]: https://kura.pro/common/images/elements/divider.svg "Divider"
+[divider]: https://cloudcdn.pro/common/images/elements/divider.svg "Divider"

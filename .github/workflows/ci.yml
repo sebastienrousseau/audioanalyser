@@ -19,13 +19,16 @@ jobs:
       version: ${{ steps.set-version.outputs.version }}
     steps:
       - name: ❯ Set up Python 🐍
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v5
         with:
           python-version: "3.10"
+      # Needs the checkout: this job reads setup.cfg.
+      - uses: actions/checkout@v4
       - name: ❯ Get version number from setup.cfg
         id: set-version
         run: |
-          echo "::set-output name=version::$(python -c 'import configparser; cfg = configparser.ConfigParser(); cfg.read("setup.cfg"); print(cfg.get("metadata", "version"))')"
+          version=$(python -c 'import configparser; cfg = configparser.ConfigParser(); cfg.read("setup.cfg"); print(cfg.get("metadata", "version"))')
+          echo "version=$version" >> "$GITHUB_OUTPUT"
 
   # This job runs unit tests using pytest
   pytest:
@@ -37,7 +40,7 @@ jobs:
 
       # Set up Python and install dependencies
       - name: ❯ Set up Python and install dependencies 🐍📦
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v5
         with:
           python-version: "3.10"
       - name: ❯ Install dependencies 📦
@@ -66,7 +69,7 @@ jobs:
       - uses: actions/checkout@v4
       # Set up Python and install dependencies
       - name: ❯ Set up Python and install dependencies 🐍📦
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v5
         with:
           python-version: "3.10"
       - name: ❯ Install flake8 📦
@@ -91,7 +94,7 @@ jobs:
       - name: ❯ Set up Python 🐍
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         id: python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v5
         with:
           python-version: "3.10"
 
@@ -154,30 +157,39 @@ jobs:
         env:
           RELEASES_URL: https://github.com/${{ github.repository }}/releases/download/v${{ env.VERSION }}
 
-      # Create a release
-      - name: Create Release 🚀
+      # Every push to main reaches this job, but only a version bump should
+      # produce a release. Without this guard the job tries to recreate an
+      # existing tag and fails with "already_exists".
+      - name: Check whether this version is already released 🔍
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        id: create_release
-        uses: actions/create-release@v1
+        id: release_check
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if gh release view "v${VERSION}" --repo "${{ github.repository }}" >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "v${VERSION} is already released; skipping release creation."
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+            echo "v${VERSION} is new; a release will be created."
+          fi
+
+      # Creates the release and attaches dist/* in one step. Replaces
+      # actions/create-release@v1, which has been archived since 2021, and the
+      # hand-rolled curl upload that followed it: that loop appended ?name= to
+      # an upload_url still carrying its "{?name,label}" template suffix, so
+      # the request URL was malformed and asset upload never worked.
+      - name: Create Release 🚀
+        if: >-
+          github.ref == 'refs/heads/main' && github.event_name == 'push'
+          && steps.release_check.outputs.exists == 'false'
+        uses: softprops/action-gh-release@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: v${{ env.VERSION }}
-          release_name: Release v${{ env.VERSION }}
+          name: Release v${{ env.VERSION }}
           body_path: ${{ github.workspace }}/CHANGELOG.md
           draft: false
           prerelease: false
-
-      - name: Upload Release Assets 📦
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          upload_url=${{ steps.create_release.outputs.upload_url }}
-          for file in dist/*; do
-            curl \
-              -H "Authorization: token ${GITHUB_TOKEN}" \
-              -H "Content-Type: $(file --mime-type -b $file)" \
-              --data-binary @$file \
-              "${upload_url}?name=$(basename $file)"
-          done
+          files: dist/*

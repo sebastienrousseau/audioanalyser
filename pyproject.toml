@@ -5,7 +5,7 @@ description = "Audio Analyser: Leverages the power of Microsoft Azure's advanced
 authors = ["Sebastien Rousseau <sebastian.rousseau@gmail.com>"]
 license = "Apache Software License"
 readme = "README.md"
-repository = "https://github.com/sebastienrousseau/audioanalyser"
+repository = "https://github.com/sebastienrousseau/audioanalyser.github.io"
 homepage = "https://audioanalyser.co"
 
 [tool.poetry.dependencies]

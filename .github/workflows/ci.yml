@@ -47,18 +47,12 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           python -m pip install -r requirements.txt
-        # python -m pip install pytest pytest-cov
+          python -m pip install pytest pytest-cov
 
-      # Run pytest
-      # - name: ❯ Run pytest 🧪
-        # run: pytest --cov=audioanalyser --cov-report=xml
-
-      # Upload code coverage report to Codecov
-      # - name: ❯ Upload code coverage report to Codecov 📊
-      #   if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-      #   uses: codecov/codecov-action@v1
-      #   with:
-      #     token: ${{ secrets.CODECOV_TOKEN }}
+      # Coverage options come from [tool.pytest.ini_options] in pyproject.toml,
+      # including --cov-fail-under, so the gate lives with the project config.
+      - name: ❯ Run pytest 🧪
+        run: pytest
 
   # This job runs flake8 to check for code style issues
   lint:

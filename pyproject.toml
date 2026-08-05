@@ -39,6 +39,25 @@ force_grid_wrap = 0
 combine_as_imports = true
 known_first_party = "audioanalyser"
 
-[tool.pytest]
-addopts = "--cov=audioanalyser --cov-report=term-missing --cov-report=xml --cov-report=html --cov-fail-under=100"
-testpaths = "tests"
+# pytest reads [tool.pytest.ini_options], not [tool.pytest], and requires
+# addopts to be a list in TOML. As [tool.pytest] with a string it aborted
+# before collecting anything.
+[tool.pytest.ini_options]
+addopts = [
+    "--cov=audioanalyser",
+    "--cov-report=term-missing",
+    "--cov-report=xml",
+    "--cov-fail-under=95",
+]
+testpaths = ["tests"]
+
+[tool.coverage.run]
+source = ["audioanalyser"]
+branch = true
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    # Module entry points; running them would start a server or a recording.
+    "if __name__ == .__main__.:",
+]

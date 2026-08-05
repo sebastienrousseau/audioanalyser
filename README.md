@@ -18,7 +18,7 @@ width="261"
 <center>
 <!-- markdownlint-enable MD033 MD041 -->
 
-[![PyPI][pypi-badge]][03] [![PyPI Downloads][pypi-downloads-badge]][07] [![License][license-badge]][01] [![Codecov][codecov-badge]][06] [![License][license-badge]][02]
+[![PyPI][pypi-badge]][03] [![PyPI Downloads][pypi-downloads-badge]][07] [![License][license-badge]][01] [![License][license-badge]][02]
 
 • [Website][00]
 • [Report Bug][03]
@@ -683,11 +683,9 @@ of [audioanalyser][05] for their help and support.
 [03]: https://github.com/sebastienrousseau/audioanalyser.github.io/issues "Audio Analyser on GitHub"
 [04]: https://github.com/sebastienrousseau/audioanalyser.github.io/blob/main/CONTRIBUTING.md "Contributing Guidelines"
 [05]: https://github.com/sebastienrousseau/audioanalyser.github.io/graphs/contributors "Contributors"
-[06]: https://codecov.io/github/sebastienrousseau/audioanalyser.github.io?branch=main "Codecov"
 [07]: https://pypi.org/project/audioanalyser/ "Audio Analyser on PyPI"
 
 [banner]: https://cloudcdn.pro/audioanalyser/images/titles/title-audioanalyser.webp "Speech-to-Text & Analysis: Easy, Fast, Accurate."
-[codecov-badge]: https://img.shields.io/codecov/c/github/sebastienrousseau/audioanalyser.github.io?style=for-the-badge&token=AaUxKfRiou 'Codecov badge'
 [diagram]: ./audio-analyser-architecture.png "Audio Analyser Architecture"
 [license-badge]: https://img.shields.io/pypi/l/audioanalyser?style=for-the-badge 'License badge'
 [pypi-badge]: https://img.shields.io/pypi/pyversions/audioanalyser.svg?style=for-the-badge 'PyPI badge'

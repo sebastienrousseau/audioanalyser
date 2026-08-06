@@ -59,6 +59,9 @@ class Provider(ABC):
     #: Environment variable holding this provider's API key, if it needs one.
     api_key_env = ""
 
+    #: How to authenticate, including any option that is not an API key.
+    credential_help = ""
+
     def __init__(self, model, api_key=None):
         self.model = model
         self.api_key = api_key
@@ -69,19 +72,33 @@ class Provider(ABC):
     ) -> str:
         """Return the model's reply as plain text."""
 
-    def _require_key(self):
-        if not self.api_key:
-            raise ProviderError(
-                f"{type(self).__name__} needs an API key. "
-                f"Set {self.api_key_env}."
-            )
-        return self.api_key
+    def _credential_kwargs(self):
+        """Return client kwargs for an explicit key, or nothing.
+
+        An empty dict is deliberate rather than a failure: every SDK here
+        resolves credentials itself - environment variables, a CLI login
+        session, workload identity - and passing ``api_key=None`` would
+        short-circuit that. Authentication is the SDK's job; ours is to
+        explain the options when it finds nothing.
+        """
+        return {"api_key": self.api_key} if self.api_key else {}
+
+    def _no_credentials(self, exc):
+        """Wrap an SDK authentication failure with every accepted option."""
+        return ProviderError(
+            f"{type(self).__name__} could not authenticate: {exc}. "
+            f"{self.credential_help}"
+        )
 
 
 class OpenAIProvider(Provider):
     """OpenAI chat completions."""
 
     api_key_env = "GPT3_API_KEY"
+    credential_help = (
+        "Set GPT3_API_KEY, or OPENAI_API_KEY which the SDK reads itself. "
+        "OpenAI has no session login; the API accepts keys only."
+    )
 
     def generate(self, system, user_text, max_tokens=2048, temperature=0.8):
         try:
@@ -92,7 +109,10 @@ class OpenAIProvider(Provider):
                 "Install it with: pip install openai"
             ) from exc
 
-        client = openai.OpenAI(api_key=self._require_key())
+        try:
+            client = openai.OpenAI(**self._credential_kwargs())
+        except openai.OpenAIError as exc:
+            raise self._no_credentials(exc) from exc
         response = client.chat.completions.create(
             model=self.model,
             messages=[
@@ -112,6 +132,12 @@ class AnthropicProvider(Provider):
     """Anthropic Messages API."""
 
     api_key_env = "ANTHROPIC_API_KEY"
+    credential_help = (
+        "Set ANTHROPIC_API_KEY, or sign in once with `ant auth login` - the "
+        "SDK reads that session from ~/.config/anthropic with no key set. "
+        "ANTHROPIC_AUTH_TOKEN and workload identity federation also work; "
+        "`ant auth status` shows which source is active."
+    )
 
     def generate(self, system, user_text, max_tokens=2048, temperature=0.8):
         try:
@@ -122,7 +148,13 @@ class AnthropicProvider(Provider):
                 "pip install 'audioanalyser[anthropic]'"
             ) from exc
 
-        client = anthropic.Anthropic(api_key=self._require_key())
+        # No explicit key means "let the SDK resolve it", not "fail": it
+        # falls back to ANTHROPIC_AUTH_TOKEN, then an `ant auth login`
+        # profile, then workload identity federation.
+        try:
+            client = anthropic.Anthropic(**self._credential_kwargs())
+        except anthropic.AnthropicError as exc:
+            raise self._no_credentials(exc) from exc
         response = client.messages.create(
             model=self.model,
             # The instruction block is a top-level parameter here, not a
@@ -144,6 +176,28 @@ class GeminiProvider(Provider):
     """Google Gemini (Agy)."""
 
     api_key_env = "GEMINI_API_KEY"
+    credential_help = (
+        "Set GEMINI_API_KEY, or use a Google Cloud session: run "
+        "`gcloud auth application-default login`, then set "
+        "GOOGLE_CLOUD_PROJECT (and optionally GOOGLE_CLOUD_LOCATION) to "
+        "route through Vertex AI with no key."
+    )
+
+    def _client(self, genai):
+        """Build a client from a key, or from a Google Cloud session.
+
+        Vertex AI mode authenticates with application-default credentials,
+        so a `gcloud auth application-default login` session works in place
+        of a key. Selected by GOOGLE_CLOUD_PROJECT being set.
+        """
+        project = os.getenv("GOOGLE_CLOUD_PROJECT")
+        if not self.api_key and project:
+            return genai.Client(
+                vertexai=True,
+                project=project,
+                location=os.getenv("GOOGLE_CLOUD_LOCATION", "global"),
+            )
+        return genai.Client(**self._credential_kwargs())
 
     def generate(self, system, user_text, max_tokens=2048, temperature=0.8):
         try:
@@ -155,7 +209,10 @@ class GeminiProvider(Provider):
                 "pip install 'audioanalyser[gemini]'"
             ) from exc
 
-        client = genai.Client(api_key=self._require_key())
+        try:
+            client = self._client(genai)
+        except Exception as exc:
+            raise self._no_credentials(exc) from exc
         response = client.models.generate_content(
             model=self.model,
             contents=user_text,

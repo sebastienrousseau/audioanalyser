@@ -44,6 +44,7 @@ def fake_openai():
         ]
     )
     module.OpenAI = MagicMock(return_value=client)
+    module.OpenAIError = type("OpenAIError", (Exception,), {})
     with patch.dict(sys.modules, {"openai": module}):
         yield module, client
 
@@ -178,24 +179,113 @@ class TestGetProvider:
         assert lp.get_provider("ollama").host == lp.DEFAULT_OLLAMA_HOST
 
 
-class TestApiKeyEnforcement:
-    """The SDK import runs first, so each case supplies its stub module.
+class TestCredentialResolution:
+    """No key means "let the SDK resolve it", not "fail".
 
-    That ordering is deliberate: a missing SDK is the more fundamental
-    blocker, so it should be reported before a missing key.
+    Each SDK has its own chain - environment variables, a CLI login
+    session, workload identity - and passing api_key=None would
+    short-circuit it. Only a genuine SDK auth failure is an error here.
     """
 
-    def test_openai_missing_key_names_the_variable(self, fake_openai):
-        with pytest.raises(lp.ProviderError, match="GPT3_API_KEY"):
-            lp.OpenAIProvider("m", api_key=None).generate("sys", "text")
+    def test_openai_omits_the_key_so_the_sdk_can_resolve_one(
+        self, fake_openai
+    ):
+        module, _ = fake_openai
 
-    def test_anthropic_missing_key_names_the_variable(self, fake_anthropic):
-        with pytest.raises(lp.ProviderError, match="ANTHROPIC_API_KEY"):
-            lp.AnthropicProvider("m", api_key=None).generate("sys", "text")
+        lp.OpenAIProvider("m", api_key=None).generate("sys", "text")
 
-    def test_gemini_missing_key_names_the_variable(self, fake_genai):
-        with pytest.raises(lp.ProviderError, match="GEMINI_API_KEY"):
-            lp.GeminiProvider("m", api_key=None).generate("sys", "text")
+        assert module.OpenAI.call_args.kwargs == {}
+
+    def test_anthropic_omits_the_key_so_a_cli_session_is_used(
+        self, fake_anthropic
+    ):
+        """`ant auth login` stores a profile the SDK reads with no key set."""
+        module, _ = fake_anthropic
+
+        lp.AnthropicProvider("m", api_key=None).generate("sys", "text")
+
+        assert module.Anthropic.call_args.kwargs == {}
+
+    def test_an_explicit_key_is_still_passed_through(self, fake_anthropic):
+        module, _ = fake_anthropic
+
+        lp.AnthropicProvider("m", api_key="sk-ant-xyz").generate("s", "t")
+
+        assert module.Anthropic.call_args.kwargs == {"api_key": "sk-ant-xyz"}
+
+    def test_an_sdk_auth_failure_names_every_accepted_option(
+        self, fake_anthropic
+    ):
+        module, _ = fake_anthropic
+        module.AnthropicError = Exception
+        module.Anthropic.side_effect = Exception("no credentials found")
+
+        with pytest.raises(lp.ProviderError) as excinfo:
+            lp.AnthropicProvider("m").generate("s", "t")
+
+        message = str(excinfo.value)
+        assert "ANTHROPIC_API_KEY" in message
+        assert "ant auth login" in message
+
+    def test_openai_auth_failure_says_there_is_no_session_login(
+        self, fake_openai
+    ):
+        """OpenAI has no OAuth equivalent; the message should say so."""
+        module, _ = fake_openai
+        module.OpenAI.side_effect = module.OpenAIError("no api key")
+
+        with pytest.raises(lp.ProviderError) as excinfo:
+            lp.OpenAIProvider("m").generate("s", "t")
+
+        message = str(excinfo.value)
+        assert "OPENAI_API_KEY" in message
+        assert "no session login" in message
+
+    def test_gemini_uses_a_google_cloud_session_when_configured(
+        self, fake_genai, clean_env
+    ):
+        """ADC via Vertex AI replaces the key entirely."""
+        _, _ = fake_genai
+        clean_env.setenv("GOOGLE_CLOUD_PROJECT", "my-project")
+        clean_env.setenv("GOOGLE_CLOUD_LOCATION", "europe-west1")
+        from google import genai
+
+        lp.GeminiProvider("m", api_key=None).generate("s", "t")
+
+        assert genai.Client.call_args.kwargs == {
+            "vertexai": True,
+            "project": "my-project",
+            "location": "europe-west1",
+        }
+
+    def test_gemini_location_defaults_to_global(self, fake_genai, clean_env):
+        clean_env.setenv("GOOGLE_CLOUD_PROJECT", "my-project")
+        clean_env.delenv("GOOGLE_CLOUD_LOCATION", raising=False)
+        from google import genai
+
+        lp.GeminiProvider("m", api_key=None).generate("s", "t")
+
+        assert genai.Client.call_args.kwargs["location"] == "global"
+
+    def test_gemini_prefers_an_explicit_key_over_the_session(
+        self, fake_genai, clean_env
+    ):
+        clean_env.setenv("GOOGLE_CLOUD_PROJECT", "my-project")
+        from google import genai
+
+        lp.GeminiProvider("m", api_key="k").generate("s", "t")
+
+        assert genai.Client.call_args.kwargs == {"api_key": "k"}
+
+    def test_gemini_auth_failure_mentions_the_gcloud_login(
+        self, fake_genai, clean_env
+    ):
+        clean_env.delenv("GOOGLE_CLOUD_PROJECT", raising=False)
+        from google import genai
+        genai.Client.side_effect = Exception("no credentials")
+
+        with pytest.raises(lp.ProviderError, match="gcloud auth"):
+            lp.GeminiProvider("m").generate("s", "t")
 
 
 class TestOpenAIProvider:

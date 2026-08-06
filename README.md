@@ -200,6 +200,19 @@ prompt, the same output files.
 
 Override the model for any provider with `LLM_MODEL`.
 
+**An API key is not the only way to authenticate.** No key set means "let
+the SDK resolve one", not "fail", so a CLI login session works instead:
+
+| Provider | Session alternative to a key |
+| --- | --- |
+| `anthropic` | `ant auth login` stores a profile the SDK reads with no key set (`ANTHROPIC_AUTH_TOKEN` and workload identity federation also work; `ant auth status` shows which is active) |
+| `gemini` | `gcloud auth application-default login`, then set `GOOGLE_CLOUD_PROJECT` to route through Vertex AI |
+| `ollama` | no credential of any kind |
+| `openai` | none — the API accepts keys only |
+
+When a provider cannot authenticate, the error lists every option it
+accepts rather than naming one variable.
+
 **Ollama runs locally**, so transcripts never leave the machine — useful when
 recordings are sensitive. It needs `ollama serve` running and the model
 pulled (`ollama pull llama3.1`); point `OLLAMA_HOST` at a non-default address

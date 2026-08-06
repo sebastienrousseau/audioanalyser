@@ -27,6 +27,8 @@ SDK is absent raises ProviderError naming the install command.
 import json
 import logging
 import os
+import shutil
+import subprocess  # nosec B404 - fixed CLI names, resolved paths, no shell
 from abc import ABC, abstractmethod
 
 import requests
@@ -39,6 +41,11 @@ DEFAULT_MODELS = {
     "anthropic": "claude-opus-5",
     "gemini": "gemini-2.5-flash",
     "ollama": "llama3.1",
+    # The CLI providers deliberately have no default: each CLI already has a
+    # configured model, and overriding it with a guess from here is how the
+    # Ollama default went wrong. LLM_MODEL still forces one.
+    "claude-cli": "",
+    "agy-cli": "",
 }
 
 DEFAULT_OLLAMA_HOST = "http://localhost:11434"
@@ -47,6 +54,10 @@ DEFAULT_OLLAMA_HOST = "http://localhost:11434"
 # adaptive thinking is on by default, so a budget sized for the summary alone
 # can be consumed before any text is produced.
 ANTHROPIC_MIN_MAX_TOKENS = 4096
+
+# Generation through a CLI is slower than a direct API call: the process
+# starts a session before it answers.
+CLI_TIMEOUT_SECONDS = 300
 
 
 class ProviderError(RuntimeError):
@@ -309,11 +320,115 @@ class OllamaProvider(Provider):
         return (payload.get("message", {}).get("content") or "").strip()
 
 
+class CliProvider(Provider):
+    """Base for backends reached through a locally signed-in CLI.
+
+    These need no API key at all: the CLI already holds an interactive
+    session, so the credential never enters this package or its
+    configuration. The cost is latency - a CLI starts a session before it
+    answers - and that the work runs under the signed-in account's quota.
+    """
+
+    #: Executable name, resolved on PATH.
+    command = ""
+
+    #: How to install and sign in to that CLI.
+    install_help = ""
+
+    def _executable(self):
+        exe = shutil.which(self.command)
+        if exe is None:
+            raise ProviderError(
+                f"The {self.command!r} CLI is not on PATH. {self.install_help}"
+            )
+        return exe
+
+    def _run(self, args, stdin=None):
+        """Run the CLI and return its stdout.
+
+        Never uses a shell, and the executable is resolved by name rather
+        than interpolated, so transcript text cannot reach a command line.
+        """
+        try:
+            completed = subprocess.run(  # nosec B603 - no shell, fixed argv
+                [self._executable(), *args],
+                input=stdin,
+                capture_output=True,
+                text=True,
+                timeout=CLI_TIMEOUT_SECONDS,
+                check=False,
+            )
+        except subprocess.TimeoutExpired as exc:
+            raise ProviderError(
+                f"{self.command} did not answer within "
+                f"{CLI_TIMEOUT_SECONDS}s."
+            ) from exc
+
+        if completed.returncode != 0:
+            detail = (completed.stderr or completed.stdout or "").strip()
+            raise ProviderError(
+                f"{self.command} exited {completed.returncode}: "
+                f"{detail[:400]}"
+            )
+        return completed.stdout.strip()
+
+    def _model_args(self):
+        """Pass a model only when one was asked for.
+
+        With no model the CLI uses whatever it is already configured for,
+        which is a better default than one guessed here.
+        """
+        return ["--model", self.model] if self.model else []
+
+
+class ClaudeCliProvider(CliProvider):
+    """Anthropic through the signed-in `claude` CLI."""
+
+    command = "claude"
+    install_help = (
+        "Install Claude Code and sign in, or use LLM_PROVIDER=anthropic "
+        "with ANTHROPIC_API_KEY instead."
+    )
+    credential_help = install_help
+
+    def generate(self, system, user_text, max_tokens=2048, temperature=0.8):
+        # The CLI takes the instructions as a real system prompt and reads
+        # the transcript from stdin, so the two stay separated as they are
+        # for the SDK providers. max_tokens and temperature have no CLI
+        # equivalent; length is governed by the instructions themselves.
+        return self._run(
+            ["-p", "--system-prompt", system, *self._model_args()],
+            stdin=user_text,
+        )
+
+
+class AgyCliProvider(CliProvider):
+    """Gemini (Agy) through the signed-in `agy` CLI."""
+
+    command = "agy"
+    install_help = (
+        "Install the Agy CLI and sign in, or use LLM_PROVIDER=gemini with "
+        "GEMINI_API_KEY instead."
+    )
+    credential_help = install_help
+
+    def generate(self, system, user_text, max_tokens=2048, temperature=0.8):
+        # Agy has no system-prompt flag, and reading the prompt from stdin
+        # makes it attempt a tool call that headless mode auto-denies, so
+        # the two parts are combined into the single prompt argument.
+        prompt = f"{system}\n\n{user_text}"
+        return self._run(
+            ["-p", prompt, "--output-format", "text", *self._model_args()]
+        )
+
+
 PROVIDERS = {
     "openai": OpenAIProvider,
     "anthropic": AnthropicProvider,
     "gemini": GeminiProvider,
     "ollama": OllamaProvider,
+    "claude-cli": ClaudeCliProvider,
+    "agy-cli": AgyCliProvider,
 }
 
 
@@ -355,6 +470,10 @@ def get_provider(name=None):
 
     if provider_name == "ollama":
         return provider_cls(model, host=os.getenv("OLLAMA_HOST"))
+
+    if issubclass(provider_cls, CliProvider):
+        # The CLI holds the session; there is no key to look up.
+        return provider_cls(model)
 
     api_key = os.getenv(provider_cls.api_key_env)
     return provider_cls(model, api_key=api_key)

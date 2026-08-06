@@ -550,6 +550,95 @@ class TestOllamaModelDiscovery:
                 lp.OllamaProvider("m").available_models()
 
 
+class TestCliProviders:
+    """These reach a signed-in CLI, so there is no key and no SDK."""
+
+    def _completed(self, stdout="  A summary.  ", returncode=0, stderr=""):
+        return types.SimpleNamespace(
+            stdout=stdout, stderr=stderr, returncode=returncode
+        )
+
+    def test_claude_passes_the_system_prompt_and_pipes_the_transcript(self):
+        with patch.object(lp.shutil, "which", return_value="/bin/claude"):
+            with patch.object(
+                lp.subprocess, "run", return_value=self._completed()
+            ) as run:
+                result = lp.ClaudeCliProvider("").generate("instr", "text")
+
+        assert result == "A summary."
+        argv = run.call_args.args[0]
+        assert argv[0] == "/bin/claude"
+        assert "--system-prompt" in argv
+        assert argv[argv.index("--system-prompt") + 1] == "instr"
+        # The transcript goes on stdin, never onto a command line.
+        assert run.call_args.kwargs["input"] == "text"
+        assert "text" not in argv
+
+    def test_agy_combines_the_parts_into_one_prompt(self):
+        """Agy has no system flag and auto-denies a tool call on stdin."""
+        with patch.object(lp.shutil, "which", return_value="/bin/agy"):
+            with patch.object(
+                lp.subprocess, "run", return_value=self._completed()
+            ) as run:
+                lp.AgyCliProvider("").generate("instr", "text")
+
+        argv = run.call_args.args[0]
+        assert "instr\n\ntext" in argv
+        assert run.call_args.kwargs["input"] is None
+
+    def test_no_shell_is_used(self):
+        with patch.object(lp.shutil, "which", return_value="/bin/claude"):
+            with patch.object(
+                lp.subprocess, "run", return_value=self._completed()
+            ) as run:
+                lp.ClaudeCliProvider("").generate("s", "t")
+
+        assert "shell" not in run.call_args.kwargs
+
+    def test_a_model_is_passed_only_when_asked_for(self):
+        with patch.object(lp.shutil, "which", return_value="/bin/claude"):
+            with patch.object(
+                lp.subprocess, "run", return_value=self._completed()
+            ) as run:
+                lp.ClaudeCliProvider("").generate("s", "t")
+                assert "--model" not in run.call_args.args[0]
+
+                lp.ClaudeCliProvider("some-model").generate("s", "t")
+                argv = run.call_args.args[0]
+                assert argv[argv.index("--model") + 1] == "some-model"
+
+    def test_a_missing_cli_names_the_alternative(self):
+        with patch.object(lp.shutil, "which", return_value=None):
+            with pytest.raises(lp.ProviderError, match="ANTHROPIC_API_KEY"):
+                lp.ClaudeCliProvider("").generate("s", "t")
+
+    def test_a_non_zero_exit_surfaces_the_cli_error(self):
+        failure = self._completed(
+            stdout="", returncode=1, stderr="not signed in"
+        )
+        with patch.object(lp.shutil, "which", return_value="/bin/agy"):
+            with patch.object(lp.subprocess, "run", return_value=failure):
+                with pytest.raises(lp.ProviderError, match="not signed in"):
+                    lp.AgyCliProvider("").generate("s", "t")
+
+    def test_a_hang_is_reported_as_a_timeout(self):
+        with patch.object(lp.shutil, "which", return_value="/bin/claude"):
+            with patch.object(
+                lp.subprocess,
+                "run",
+                side_effect=lp.subprocess.TimeoutExpired("claude", 300),
+            ):
+                with pytest.raises(lp.ProviderError, match="did not answer"):
+                    lp.ClaudeCliProvider("").generate("s", "t")
+
+    @pytest.mark.parametrize("name", ["claude-cli", "agy-cli"])
+    def test_get_provider_builds_them_without_a_key(self, clean_env, name):
+        provider = lp.get_provider(name)
+
+        assert isinstance(provider, lp.CliProvider)
+        assert provider.api_key is None
+
+
 class TestMissingSdk:
     @pytest.mark.parametrize(
         ("cls", "module_name", "extra"),

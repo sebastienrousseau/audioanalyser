@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-"""End-to-end tests against a live Ollama server.
+"""End-to-end tests against locally available providers.
 
 Every other test in this suite mocks the provider, which proves the request
 is well-formed but never that a model actually answers it. These run the real
@@ -23,8 +23,6 @@ against a local server.
 They skip when no server is reachable, so CI and contributors without Ollama
 are unaffected. Run them with a server up:
 
-    ollama serve &
-    ollama pull <model>
     pytest -m integration
 
 The model is whatever the server already has, so the test never depends on a
@@ -115,3 +113,55 @@ class TestLivePipeline:
         assert len(rows) == 1
         assert rows[0][0] == "call.txt"
         assert rows[0][1].strip() == text.strip()
+
+
+@pytest.fixture(params=["claude-cli", "agy-cli"])
+def live_cli(request):
+    """Skip unless that CLI is installed and signed in."""
+    provider = lp.get_provider(request.param)
+    if lp.shutil.which(provider.command) is None:
+        pytest.skip(f"{provider.command} CLI not on PATH")
+    return provider
+
+
+class TestLiveCliProviders:
+    """Proves the CLI providers generate for real, with no API key set.
+
+    The credential lives in the CLI's own session, so nothing is read from
+    the environment or from this package's configuration.
+    """
+
+    def test_generates_text_through_the_signed_in_cli(
+        self, live_cli, clean_env
+    ):
+        # Every provider key is cleared, so a pass cannot come from one.
+        result = live_cli.generate(
+            system=(
+                "Reply with exactly the word READY and nothing else. "
+                "Do not use any tools."
+            ),
+            user_text="Confirm you are working.",
+        )
+
+        assert result, f"{live_cli.command} returned no text"
+        assert "READY" in result.upper()
+
+    def test_summarises_a_transcript_end_to_end(self, live_cli, clean_env):
+        transcript = (
+            "Agent: How can I help? "
+            "Customer: Checkout times out and I was charged twice. "
+            "I want a refund and the timeout fixed."
+        )
+
+        result = live_cli.generate(
+            system=(
+                "Summarize the transcript in the user message as two short "
+                "lines for an executive. Output only the summary, and do "
+                "not use any tools."
+            ),
+            user_text=transcript,
+        )
+
+        assert result
+        lowered = result.lower()
+        assert "refund" in lowered or "charge" in lowered

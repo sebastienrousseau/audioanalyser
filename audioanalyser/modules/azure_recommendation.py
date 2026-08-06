@@ -319,11 +319,14 @@ class RecommendationsGenerator:
         Returns:
             str: The generated recommendation text.
         """
-        openai.api_key = self.config.GPT3_API_KEY
+        # openai>=1.0 removed the module-level Completion resource and the
+        # global api_key; requests go through a client instance, and the
+        # parameter is `model` rather than `engine`.
+        client = openai.OpenAI(api_key=self.config.GPT3_API_KEY)
 
         prompt = self.create_prompt(transcript.text)
-        response = openai.Completion.create(
-            engine="gpt-3.5-turbo-instruct",
+        response = client.completions.create(
+            model="gpt-3.5-turbo-instruct",
             prompt=prompt,
             temperature=0.8,
             max_tokens=self.config.MAX_OUTPUT_LENGTH,

@@ -44,6 +44,7 @@ setup(
         'python-dotenv>=0.15.0',
         'requests>=2.25.1',
         'cherrypy>=18.6.0',
+        'pyaudio>=0.2.14',
     ],
     python_requires='>=3.10',
     classifiers=[

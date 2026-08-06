@@ -36,10 +36,16 @@ import pytest
 # Import-time shims (must precede any `audioanalyser` import)
 # --------------------------------------------------------------------------
 
-if "pyaudio" not in sys.modules:  # pragma: no branch
+try:
+    import pyaudio  # noqa: F401
+except ImportError:
+    # PyAudio ships wheels for Windows only; macOS and Linux build it from
+    # source against PortAudio. The stub keeps the suite runnable where that
+    # is absent. Where the real package is installed it is used instead, so
+    # the format constants come from PortAudio rather than being asserted
+    # against copies. No test opens a device: AudioRecorder tests patch
+    # pyaudio.PyAudio regardless of which module is in play.
     _pyaudio = types.ModuleType("pyaudio")
-    # Values match PortAudio's real constants so tests exercise the same
-    # branches the production code takes.
     _pyaudio.paInt16 = 8
     _pyaudio.paInt24 = 4
     _pyaudio.paInt32 = 2

@@ -34,6 +34,10 @@ jobs:
   pytest:
     needs: version
     runs-on: ubuntu-latest
+    env:
+      # Job level so the upload step's `if` can test it; a step's own env is
+      # not in scope for its own condition.
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
     steps:
       # Check out the repository code
       - uses: actions/checkout@v4
@@ -59,6 +63,23 @@ jobs:
       # including --cov-fail-under, so the gate lives with the project config.
       - name: ❯ Run pytest 🧪
         run: pytest
+
+      # pytest writes coverage.xml via --cov-report=xml.
+      #
+      # Skipped until CODECOV_TOKEN exists: Codecov rejects tokenless uploads
+      # on a protected branch ("Token required because branch is protected"),
+      # so without the secret this can only fail. Once set, fail_ci_if_error
+      # is deliberately true - a silent upload failure is how the badge came
+      # to read "unknown" while the repo looked instrumented.
+      - name: ❯ Upload coverage to Codecov 📊
+        if: env.CODECOV_TOKEN != ''
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./coverage.xml
+          flags: unittests
+          fail_ci_if_error: true
+          verbose: true
 
   # This job runs flake8 to check for code style issues
   lint:

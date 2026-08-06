@@ -191,31 +191,47 @@ class TestGenerateRecommendation:
         source = tmp_path / "call.txt"
         source.write_text("customer wants a refund")
         generator = rec.RecommendationsGenerator(rec.Config())
+        client = MagicMock()
+        client.completions.create.return_value = _completion(
+            "  Recommend a refund.  "
+        )
 
-        with patch.object(openai, "Completion", MagicMock()) as completion:
-            completion.create.return_value = _completion(
-                "  Recommend a refund.  "
-            )
+        with patch.object(openai, "OpenAI", return_value=client):
             result = generator.generate_recommendation(rec.Transcript(source))
 
         assert result == "Recommend a refund."
-        kwargs = completion.create.call_args.kwargs
-        assert kwargs["engine"] == "gpt-3.5-turbo-instruct"
+        kwargs = client.completions.create.call_args.kwargs
+        assert kwargs["model"] == "gpt-3.5-turbo-instruct"
         assert kwargs["max_tokens"] == 2048
+        assert kwargs["temperature"] == 0.8
         assert "customer wants a refund" in kwargs["prompt"]
 
-    def test_rejects_the_removed_openai_api(self, full_env, tmp_path):
-        """openai>=1.0 removed the Completion resource this module calls.
-
-        Pinned deliberately: while this raises, the -sum/--summary feature
-        cannot work at runtime no matter how the module is configured.
-        """
+    def test_builds_the_client_with_the_configured_api_key(
+        self, full_env, tmp_path
+    ):
         source = tmp_path / "call.txt"
         source.write_text("hello")
         generator = rec.RecommendationsGenerator(rec.Config())
+        client = MagicMock()
+        client.completions.create.return_value = _completion("text")
 
-        with pytest.raises(openai.lib._old_api.APIRemovedInV1):
+        with patch.object(openai, "OpenAI", return_value=client) as factory:
             generator.generate_recommendation(rec.Transcript(source))
+
+        factory.assert_called_once_with(api_key="test-openai-key")
+
+    def test_does_not_use_the_resource_removed_in_openai_v1(self):
+        """Guards the migration from openai<1.0.
+
+        openai.Completion and the global api_key were removed in 1.0;
+        calling them raises APIRemovedInV1 and the failure is swallowed by
+        azure_recommendation(), so the feature would fail silently.
+        """
+        source = Path(rec.__file__).read_text()
+
+        assert "openai.Completion" not in source
+        assert "openai.api_key" not in source
+        assert "client.completions.create" in source
 
 
 class TestPersistence:
@@ -314,16 +330,20 @@ class TestEntryPoint:
 
         assert "Script execution failed" in caplog.text
 
-    def test_swallows_the_removed_openai_api_error(
+    def test_api_failures_are_logged_and_produce_no_output(
         self, full_env, folders, caplog
     ):
-        """The removed-API failure is caught and logged, not surfaced.
+        """Errors from the OpenAI call are caught, not surfaced.
 
-        This is why the feature fails silently rather than crashing.
+        Worth knowing when diagnosing: a failing request leaves the
+        recommendations folder empty and only a log line behind.
         """
         (folders["transcripts"] / "call.txt").write_text("customer text")
 
-        rec.azure_recommendation()
+        with patch.object(
+            openai, "OpenAI", side_effect=RuntimeError("api unavailable")
+        ):
+            rec.azure_recommendation()
 
         assert "Script execution failed" in caplog.text
         assert not list(Path(folders["recommendations"]).iterdir())

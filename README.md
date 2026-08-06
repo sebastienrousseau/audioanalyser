@@ -164,6 +164,27 @@ Audio Analyser is built on Azure Cognitive Services for speech and language proc
 - **Recommendation Generator** - suggest actions
 - **Web Server** - handle API requests
 
+### Prerequisites
+
+Audio Analyser requires **Python 3.10 or later**.
+
+Audio recording uses PyAudio, which publishes pre-built wheels for Windows
+only. On macOS and Linux, pip compiles it against PortAudio, so install
+PortAudio *before* installing Audio Analyser or the install will fail:
+
+```bash
+# macOS
+brew install portaudio
+
+# Debian / Ubuntu
+sudo apt-get install portaudio19-dev
+
+# Fedora
+sudo dnf install portaudio-devel
+```
+
+Windows needs no extra step.
+
 ### Create a Virtual Environment
 
 We recommend creating a virtual environment to install the Audio Analyser. This will ensure that the package is installed in an isolated environment and will not affect other projects.

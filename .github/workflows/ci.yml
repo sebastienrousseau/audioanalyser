@@ -19,11 +19,11 @@ jobs:
       version: ${{ steps.set-version.outputs.version }}
     steps:
       - name: ❯ Set up Python 🐍
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: "3.10"
       # Needs the checkout: this job reads setup.cfg.
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: ❯ Get version number from setup.cfg
         id: set-version
         run: |
@@ -40,11 +40,11 @@ jobs:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
     steps:
       # Check out the repository code
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # Set up Python and install dependencies
       - name: ❯ Set up Python and install dependencies 🐍📦
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: "3.10"
 
@@ -73,7 +73,7 @@ jobs:
       # to read "unknown" while the repo looked instrumented.
       - name: ❯ Upload coverage to Codecov 📊
         if: env.CODECOV_TOKEN != ''
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v7
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: ./coverage.xml
@@ -87,10 +87,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       # Check out the repository code
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       # Set up Python and install dependencies
       - name: ❯ Set up Python and install dependencies 🐍📦
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: "3.10"
       # PyAudio has no Linux wheel; pylint resolves imports, so the package's
@@ -129,13 +129,13 @@ jobs:
     steps:
       # fetch-depth 0 because the changelog runs `git describe --tags`, and
       # the default shallow checkout fetches no tags at all.
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - name: ❯ Set up Python 🐍
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         id: python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: "3.10"
 
@@ -191,7 +191,7 @@ jobs:
       - name: ❯ Publish distribution packages to PyPI 🚀
         id: publish
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        uses: pypa/gh-action-pypi-publish@v1.13.0
+        uses: pypa/gh-action-pypi-publish@v1.14.2
         with:
           user: ${{ env.TWINE_USERNAME }}
           password: ${{ env.TWINE_PASSWORD }}
@@ -238,7 +238,7 @@ jobs:
         if: >-
           github.ref == 'refs/heads/main' && github.event_name == 'push'
           && steps.release_check.outputs.exists == 'false'
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:

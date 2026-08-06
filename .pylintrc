@@ -41,7 +41,6 @@ extension-pkg-whitelist=
 # Pylint and this flag can prevent that. It has one side effect, the resulting
 # AST will be different than the one from reality. This option is deprecated
 # and it will be removed in Pylint 2.0.
-optimize-ast=no
 
 
 [MESSAGES CONTROL]
@@ -55,19 +54,16 @@ confidence=
 # multiple time (only on the command line, not in the configuration file where
 # it should appear only once). See also the "--disable" option for examples.
 disable=all
-enable= E0001,E0100,E0101,E0102,E0103,E0104,E0105,E0106,E0107,E0110,
-        E0113,E0114,E0115,E0116,E0117,E0108,E0202,E0203,E0211,E0236,
-        E0238,E0239,E0240,E0241,E0301,E0302,E0601,E0603,E0604,E0701,
-        E0702,E0703,E0704,E0710,E0711,E0712,E1003,E1102,E1111,E0112,
-        E1120,E1121,E1123,E1124,E1125,E1126,E1127,E1132,E1200,E1201,
-        E1205,E1206,E1300,E1301,E1302,E1303,E1304,E1305,E1306,
-        C0123,C0200,C0303,C1001,
-        W0101,W0102,W0104,W0105,W0106,W0107,W0108,W0109,W0110,W0120,
-        W0122,W0124,W0150,W0199,W0221,W0222,W0233,W0404,W0410,W0601,
-        W0602,W0604,W0611,W0612,W0622,W0623,W0702,W0705,W0711,W1300,
-        W1301,W1302,W1303,,W1305,W1306,W1307
-        R0102,R0201,R0202,R0203
-        
+enable=E0001,E0100,E0101,E0102,E0103,E0104,E0105,E0106,E0107,E0110,
+        E0113,E0114,E0115,E0117,E0108,E0202,E0203,E0211,E0236,E0238,
+        E0239,E0240,E0241,E0301,E0302,E0601,E0603,E0604,E0701,E0702,
+        E0704,E0710,E0711,E0712,E1003,E1102,E1111,E0112,E1120,E1121,
+        E1123,E1124,E1125,E1126,E1127,E1132,E1200,E1201,E1205,E1206,
+        E1300,E1301,E1302,E1303,E1304,E1305,E1306,C0123,C0200,C0303,
+        W0101,W0102,W0104,W0105,W0106,W0107,W0108,W0109,W0120,W0122,
+        W0124,W0150,W0199,W0221,W0222,W0233,W0404,W0410,W0601,W0602,
+        W0604,W0611,W0612,W0622,W0702,W0705,W0711,W1300,W1301,W1302,
+        W1303,W1305,W1306,W1307,R0202,R0203
 
 # Disable the message, report, category or checker with the given id(s). You
 # can either give multiple identifiers separated by comma (,) or put this
@@ -92,7 +88,6 @@ output-format=text
 # command line instead of printing them on stdout. Reports (if any) will be
 # written in a file name "pylint_global.[txt|html]". This option is deprecated
 # and it will be removed in Pylint 2.0.
-files-output=no
 
 # Tells whether to display a full report or only the messages
 reports=yes
@@ -132,61 +127,51 @@ property-classes=abc.abstractproperty
 const-rgx=(([A-Z_][A-Z0-9_]*)|(__.*__))$
 
 # Naming hint for constant names
-const-name-hint=(([A-Z_][A-Z0-9_]*)|(__.*__))$
 
 # Regular expression matching correct class names
 class-rgx=[A-Z_][a-zA-Z0-9]+$
 
 # Naming hint for class names
-class-name-hint=[A-Z_][a-zA-Z0-9]+$
 
 # Regular expression matching correct argument names
 argument-rgx=[a-z_][a-z0-9_]{2,30}$
 
 # Naming hint for argument names
-argument-name-hint=[a-z_][a-z0-9_]{2,30}$
 
 # Regular expression matching correct variable names
 variable-rgx=[a-z_][a-z0-9_]{2,30}$
 
 # Naming hint for variable names
-variable-name-hint=[a-z_][a-z0-9_]{2,30}$
 
 # Regular expression matching correct class attribute names
 class-attribute-rgx=([A-Za-z_][A-Za-z0-9_]{2,30}|(__.*__))$
 
 # Naming hint for class attribute names
-class-attribute-name-hint=([A-Za-z_][A-Za-z0-9_]{2,30}|(__.*__))$
 
 # Regular expression matching correct method names
 method-rgx=[a-z_][a-z0-9_]{2,30}$
 
 # Naming hint for method names
-method-name-hint=[a-z_][a-z0-9_]{2,30}$
 
 # Regular expression matching correct module names
 module-rgx=(([a-z_][a-z0-9_]*)|([A-Z][a-zA-Z0-9]+))$
 
 # Naming hint for module names
-module-name-hint=(([a-z_][a-z0-9_]*)|([A-Z][a-zA-Z0-9]+))$
 
 # Regular expression matching correct function names
 function-rgx=[a-z_][a-z0-9_]{2,30}$
 
 # Naming hint for function names
-function-name-hint=[a-z_][a-z0-9_]{2,30}$
 
 # Regular expression matching correct attribute names
 attr-rgx=[a-z_][a-z0-9_]{2,30}$
 
 # Naming hint for attribute names
-attr-name-hint=[a-z_][a-z0-9_]{2,30}$
 
 # Regular expression matching correct inline iteration names
 inlinevar-rgx=[A-Za-z_][A-Za-z0-9_]*$
 
 # Naming hint for inline iteration names
-inlinevar-name-hint=[A-Za-z_][A-Za-z0-9_]*$
 
 # Regular expression which should only match function or class names that do
 # not require a docstring.
@@ -219,7 +204,6 @@ single-line-if-stmt=no
 # separator` is used to allow tabulation in dicts, etc.: {1  : 1,\n222: 2}.
 # `trailing-comma` allows a space between comma and closing bracket: (a, ).
 # `empty-line` allows space-only lines.
-no-space-check=trailing-comma,dict-separator
 
 # Maximum number of lines in a module
 max-module-lines=1000
@@ -417,4 +401,4 @@ analyse-fallback-blocks=no
 
 # Exceptions that will emit a warning when being caught. Defaults to
 # "Exception"
-overgeneral-exceptions=Exception
+overgeneral-exceptions=builtins.Exception

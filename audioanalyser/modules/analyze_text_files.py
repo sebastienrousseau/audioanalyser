@@ -23,6 +23,7 @@ import sqlite3
 from azure.core.credentials import AzureKeyCredential
 from azure.ai.textanalytics.aio import TextAnalyticsClient
 from dotenv import load_dotenv
+from audioanalyser.modules.sql_utils import safe_identifier
 
 # Load environment variables from .env file for configuration
 load_dotenv()
@@ -265,14 +266,16 @@ class TextAnalysis:
 
         # Save to SQLite
         db_filename = os.path.join(config.reports, "text_analysis.db")
+        # Env-supplied name: validate before it reaches the statement.
+        table = safe_identifier(config.db_name)
         with sqlite3.connect(db_filename) as conn:
             cursor = conn.cursor()
             cursor.execute(
-                f"""CREATE TABLE IF NOT EXISTS {config.db_name}
+                f"""CREATE TABLE IF NOT EXISTS {table}
                             (filename TEXT, analysis TEXT)"""
             )
             cursor.execute(
-                f"INSERT INTO {config.db_name} (filename, analysis)"
+                f"INSERT INTO {table} (filename, analysis)"  # nosec B608
                 f"VALUES (?, ?)",
                 (
                     filename,

@@ -330,6 +330,16 @@ class TestOllamaProvider:
         response.json.return_value = payload
         return response
 
+    @pytest.fixture(autouse=True)
+    def _model_is_available(self):
+        """generate() checks the model exists before sending the prompt."""
+        with patch.object(
+            lp.OllamaProvider,
+            "available_models",
+            return_value=["llama3.1", "m"],
+        ):
+            yield
+
     def test_posts_to_the_chat_endpoint_and_returns_content(self):
         response = self._response({"message": {"content": "  A summary.  "}})
 
@@ -389,6 +399,65 @@ class TestOllamaProvider:
     def test_returns_empty_string_when_the_payload_has_no_content(self):
         with patch.object(requests, "post", return_value=self._response({})):
             assert lp.OllamaProvider("m").generate("s", "t") == ""
+
+
+class TestOllamaModelDiscovery:
+    """The right model is a property of the host, not of this package."""
+
+    def test_lists_the_models_the_server_has(self):
+        response = MagicMock()
+        response.json.return_value = {
+            "models": [{"name": "llama3.1:8b"}, {"name": "gemma3:4b"}]
+        }
+
+        with patch.object(requests, "get", return_value=response) as get:
+            models = lp.OllamaProvider("m").available_models()
+
+        assert models == ["llama3.1:8b", "gemma3:4b"]
+        assert get.call_args.args[0].endswith("/api/tags")
+
+    def test_a_bare_family_name_matches_a_tagged_model(self):
+        """`llama3.1` should match a pulled `llama3.1:8b`."""
+        with patch.object(
+            lp.OllamaProvider, "available_models", return_value=["llama3.1:8b"]
+        ):
+            response = MagicMock()
+            response.json.return_value = {"message": {"content": "ok"}}
+            with patch.object(requests, "post", return_value=response):
+                assert lp.OllamaProvider("llama3.1").generate("s", "t") == "ok"
+
+    def test_an_absent_model_names_what_is_available(self):
+        with patch.object(
+            lp.OllamaProvider, "available_models", return_value=["gemma3:4b"]
+        ):
+            with pytest.raises(lp.ProviderError) as excinfo:
+                lp.OllamaProvider("llama3.1").generate("s", "t")
+
+        message = str(excinfo.value)
+        assert "ollama pull llama3.1" in message
+        assert "gemma3:4b" in message
+
+    def test_says_none_when_the_server_has_no_models(self):
+        with patch.object(
+            lp.OllamaProvider, "available_models", return_value=[]
+        ):
+            with pytest.raises(lp.ProviderError, match="none"):
+                lp.OllamaProvider("llama3.1").generate("s", "t")
+
+    def test_unreachable_server_explains_how_to_start_it(self):
+        with patch.object(
+            requests, "get", side_effect=requests.ConnectionError("refused")
+        ):
+            with pytest.raises(lp.ProviderError, match="ollama serve"):
+                lp.OllamaProvider("m").available_models()
+
+    def test_reports_a_non_json_tags_response(self):
+        response = MagicMock()
+        response.json.side_effect = lp.json.JSONDecodeError("bad", "doc", 0)
+
+        with patch.object(requests, "get", return_value=response):
+            with pytest.raises(lp.ProviderError, match="Could not reach"):
+                lp.OllamaProvider("m").available_models()
 
 
 class TestMissingSdk:

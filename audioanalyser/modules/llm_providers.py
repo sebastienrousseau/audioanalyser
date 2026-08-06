@@ -181,7 +181,43 @@ class OllamaProvider(Provider):
         super().__init__(model, api_key)
         self.host = (host or DEFAULT_OLLAMA_HOST).rstrip("/")
 
+    def available_models(self):
+        """Return the models this server has pulled.
+
+        Raises:
+            ProviderError: If the server cannot be reached.
+        """
+        try:
+            response = requests.get(f"{self.host}/api/tags", timeout=10)
+            response.raise_for_status()
+            payload = response.json()
+        except (requests.RequestException, json.JSONDecodeError) as exc:
+            raise ProviderError(
+                f"Could not reach Ollama at {self.host}: {exc}. "
+                "Is `ollama serve` running?"
+            ) from exc
+        return [m.get("name", "") for m in payload.get("models", [])]
+
+    def _check_model(self):
+        """Fail with the actual model list rather than a generic 404.
+
+        Which models exist is a property of the machine, not of this package,
+        so the default here is a guess that a given host may not have pulled.
+        """
+        models = self.available_models()
+        # Ollama names are "family:tag"; accept a bare family name too.
+        families = {name.split(":", 1)[0] for name in models}
+        if self.model in models or self.model in families:
+            return
+        raise ProviderError(
+            f"Ollama at {self.host} has no model {self.model!r}. "
+            f"Pull it with `ollama pull {self.model}`, set LLM_MODEL to one "
+            f"it already has ({', '.join(sorted(models)) or 'none'}), or "
+            "point OLLAMA_HOST at a different server."
+        )
+
     def generate(self, system, user_text, max_tokens=2048, temperature=0.8):
+        self._check_model()
         try:
             response = requests.post(
                 f"{self.host}/api/chat",

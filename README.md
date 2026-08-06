@@ -209,6 +209,25 @@ Provider SDKs are optional so that installing one backend does not pull in
 the others. Selecting a provider whose SDK is missing reports the exact
 install command rather than failing with an import error.
 
+Which Ollama model to use is a property of your machine, not of this
+package, so the provider asks the server what it has: naming a model that is
+not pulled reports the ones that are, rather than a bare HTTP error.
+
+### Running the tests
+
+```bash
+pytest                  # unit tests: 287, no network, no credentials
+pytest -m integration   # end-to-end against a live Ollama server
+```
+
+Integration tests are deselected by default and skip when no Ollama server
+is reachable, so they never block CI or contributors without one. They run
+the real pipeline — transcript in, text/JSON/SQLite out — against whichever
+model the server already has.
+
+Quality gates, all enforced in CI: `flake8`, `pylint` (10.00/10), `bandit`
+(no findings), and `pytest` at 100% statement and branch coverage.
+
 ### Create a Virtual Environment
 
 We recommend creating a virtual environment to install the Audio Analyser. This will ensure that the package is installed in an isolated environment and will not affect other projects.

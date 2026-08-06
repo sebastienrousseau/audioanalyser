@@ -23,6 +23,7 @@ import os
 import logging
 from pathlib import Path
 from dotenv import load_dotenv
+from audioanalyser.modules.sql_utils import safe_identifier
 
 # Load environment variables
 load_dotenv()
@@ -32,6 +33,9 @@ logging.basicConfig(
     level=logging.INFO, format="%(asctime)s %(levelname)s app - %(message)s"
 )
 logger = logging.getLogger("Azure Translator")
+
+# Seconds to wait on the Translator API before giving up on a request.
+REQUEST_TIMEOUT_SECONDS = 30
 
 
 class Config:
@@ -109,8 +113,14 @@ class Translator:
         body = [{'text': text}]
 
         try:
+            # Without a timeout a stalled connection hangs the run:
+            # translate() is called once per transcript, unbounded.
             response = requests.post(
-                constructed_url, params=params, headers=headers, json=body
+                constructed_url,
+                params=params,
+                headers=headers,
+                json=body,
+                timeout=REQUEST_TIMEOUT_SECONDS,
             )
             response.raise_for_status()
             return response.json()
@@ -180,21 +190,19 @@ def write_to_sqlite(
     db_file_path
 ):
     # Write the translations to a SQLite database
+    table = safe_identifier(db_table_name)
     with sqlite3.connect(db_file_path) as conn:
         cursor = conn.cursor()
         cursor.execute(
-            f"""CREATE TABLE IF NOT EXISTS {db_table_name}
+            f"""CREATE TABLE IF NOT EXISTS {table}
             (filename TEXT, language TEXT, translation TEXT)"""
         )
+        insert_sql = (
+            f"INSERT INTO {table} "  # nosec B608 - validated identifier
+            "(filename, language, translation) VALUES (?, ?, ?)"
+        )
         for text in translations:
-            cursor.execute(
-                f"""INSERT INTO {db_table_name} (
-                    filename,
-                    language,
-                    translation
-                )
-                VALUES (?, ?, ?)""", (file_name, language, text)
-            )
+            cursor.execute(insert_sql, (file_name, language, text))
 
 
 def azure_translator(*args: str) -> None:

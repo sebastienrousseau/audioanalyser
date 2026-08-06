@@ -123,13 +123,36 @@ class TestPromptConstruction:
     def test_default_strategy_scales_with_the_input_length(self, full_env):
         generator = rec.RecommendationsGenerator(rec.Config())
 
-        # 100 words at ratio 0.1
-        assert generator.calculate_prompt_length(" ".join(["w"] * 100)) == 10
+        # 4000 words at ratio 0.1, comfortably above the floor
+        assert generator.calculate_prompt_length(" ".join(["w"] * 4000)) == 400
 
-    def test_default_strategy_never_returns_less_than_one(self, full_env):
+    def test_short_transcripts_get_the_floor_not_a_token_or_two(
+        self, full_env
+    ):
+        """A live run asked gemma3 for a "6 token" summary and got a refusal.
+
+        The ratio alone scales a short call down to a handful of tokens,
+        which cannot carry the section headings the prompt also demands.
+        """
         generator = rec.RecommendationsGenerator(rec.Config())
 
-        assert generator.calculate_prompt_length("one") == 1
+        assert generator.calculate_prompt_length("one") == (
+            rec.MIN_SUMMARY_TOKENS
+        )
+
+    def test_never_asks_for_more_than_the_hard_output_cap(
+        self, full_env, clean_env
+    ):
+        clean_env.setenv("MAX_OUTPUT_LENGTH", "50")
+        generator = rec.RecommendationsGenerator(rec.Config())
+
+        assert generator.calculate_prompt_length(" ".join(["w"] * 9000)) == 50
+
+    def test_instructions_say_where_the_transcript_is(self, full_env):
+        """Without this a smaller model asks the user to paste it."""
+        generator = rec.RecommendationsGenerator(rec.Config())
+
+        assert "user message" in generator.create_prompt("hello")
 
     def test_fixed_strategy_is_capped_by_max_output_length(
         self, full_env, clean_env

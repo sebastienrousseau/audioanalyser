@@ -127,8 +127,11 @@ jobs:
       VERSION: ${{ needs.version.outputs.version }}
       PKG_NAME: audioanalyser
     steps:
-      # Check out the repository code
+      # fetch-depth 0 because the changelog runs `git describe --tags`, and
+      # the default shallow checkout fetches no tags at all.
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: ❯ Set up Python 🐍
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         id: python
@@ -164,8 +167,17 @@ jobs:
           echo "## Release v${{ env.VERSION }} - $(date +'%Y-%m-%d')" >> ${{ github.workspace }}/CHANGELOG.md
           # Copy content of template file to CHANGELOG.md
           cat TEMPLATE.md >> ${{ github.workspace }}/CHANGELOG.md
-          # Append git log to CHANGELOG.md
-          echo "$(git log --pretty=format:'%s' --reverse $(git describe --tags --abbrev=0)..HEAD)" >> ${{ github.workspace }}/CHANGELOG.md
+          # Append git log to CHANGELOG.md. Assigned rather than inlined
+          # into echo: a failure inside echo "$(...)" is swallowed, which is
+          # how this silently produced an empty changelog.
+          if previous_tag=$(git describe --tags --abbrev=0 2>/dev/null); then
+            range="${previous_tag}..HEAD"
+          else
+            echo "No previous tag; logging full history."
+            range="HEAD"
+          fi
+          git log --pretty=format:'%s' --reverse "$range" \
+            >> ${{ github.workspace }}/CHANGELOG.md
           # Append empty line to CHANGELOG.md
           echo "" >> ${{ github.workspace }}/CHANGELOG.md
 

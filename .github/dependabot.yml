@@ -1,0 +1,51 @@
+# Dependabot configuration.
+#
+# Without this file, Dependabot edits pins in requirements.txt one line at a
+# time and leaves the environment markers beside them untouched. That is how
+# `setuptools==83.0.0 ; python_version >= "3.9"` was written into a project
+# running 3.9: 83.0.0 requires >=3.10, so dependency installation failed and
+# every CI run on main went red.
+#
+# requirements.txt is generated from poetry.lock, so it is excluded here and
+# regenerated with `poetry export` instead. Dependabot updates the lockfile,
+# where it resolves the whole graph and cannot produce that mismatch.
+version: 2
+
+updates:
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    # Group routine bumps so a version bump does not open one PR per package.
+    groups:
+      python-dependencies:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+    # Generated from poetry.lock; a direct edit desynchronises the two.
+    ignore:
+      - dependency-name: "pyaudio"
+        # No Linux wheel: a bump means every contributor rebuilds against
+        # PortAudio, so it is reviewed deliberately rather than automatically.
+        update-types:
+          - "version-update:semver-major"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+    commit-message:
+      prefix: "build(deps)"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    groups:
+      github-actions:
+        patterns:
+          - "*"
+    labels:
+      - "dependencies"
+    commit-message:
+      prefix: "build(ci)"

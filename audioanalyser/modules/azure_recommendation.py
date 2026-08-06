@@ -55,6 +55,14 @@ logging.basicConfig(
 )
 logger = logging.getLogger("AzureRecommendations")
 
+# gpt-3.5-turbo-instruct was the only model the legacy completions endpoint
+# still served, and OpenAI has been retiring it. gpt-4.1-mini sits in the
+# efficient tier while following the structural instructions this prompt
+# relies on - headings, bullets, ordering - noticeably better. Override with
+# OPENAI_MODEL; the library also accepts gpt-4.1-nano, gpt-4o-mini,
+# gpt-5-mini and gpt-5-nano.
+DEFAULT_MODEL = "gpt-4.1-mini"
+
 
 class Config:
     """
@@ -99,6 +107,9 @@ class Config:
             os.getenv("MAX_OUTPUT_LENGTH", 2048)
         )
         self.OUTPUT_VOICE = os.getenv("OUTPUT_VOICE", "neutral")
+        # Overridable so the model can be changed without a code edit, e.g.
+        # gpt-4.1-nano to cut cost further, or gpt-5-mini for more capability.
+        self.OPENAI_MODEL = os.getenv("OPENAI_MODEL", DEFAULT_MODEL)
         self.validate()
 
     def validate(self) -> None:
@@ -309,8 +320,7 @@ class RecommendationsGenerator:
 
     def generate_recommendation(self, transcript: Transcript) -> str:
         """
-        Generates a recommendation for a given transcript using the OpenAI
-        GPT-3 model.
+        Generates a recommendation for a given transcript.
 
         Args:
             transcript (Transcript): The transcript object containing the text
@@ -320,32 +330,51 @@ class RecommendationsGenerator:
             str: The generated recommendation text.
         """
         # openai>=1.0 removed the module-level Completion resource and the
-        # global api_key; requests go through a client instance, and the
-        # parameter is `model` rather than `engine`.
+        # global api_key; requests go through a client instance.
         client = openai.OpenAI(api_key=self.config.GPT3_API_KEY)
 
-        prompt = self.create_prompt(transcript.text)
-        response = client.completions.create(
-            model="gpt-3.5-turbo-instruct",
-            prompt=prompt,
+        response = client.chat.completions.create(
+            model=self.config.OPENAI_MODEL,
+            messages=self.build_messages(transcript.text),
             temperature=0.8,
-            max_tokens=self.config.MAX_OUTPUT_LENGTH,
+            max_completion_tokens=self.config.MAX_OUTPUT_LENGTH,
             n=1,
             stop=None,
         )
 
-        return response.choices[0].text.strip()
+        content = response.choices[0].message.content
+        return content.strip() if content else ""
 
-    def create_prompt(self, input_text: str) -> str:
+    def build_messages(self, input_text: str) -> list:
         """
-        Constructs a prompt for the GPT-3 model based on the input text and
-        configured settings.
+        Builds the chat messages sent to the model.
+
+        The instructions travel as a system message and the transcript as a
+        user message. Chat models weight the two differently, so keeping the
+        source text out of the instruction block stops long transcripts from
+        diluting the formatting rules.
 
         Args:
             input_text (str): The text of the transcript.
 
         Returns:
-            str: The constructed prompt for GPT-3.
+            list: Chat messages in the order the API expects.
+        """
+        return [
+            {"role": "system", "content": self.create_prompt(input_text)},
+            {"role": "user", "content": input_text},
+        ]
+
+    def create_prompt(self, input_text: str) -> str:
+        """
+        Constructs the instruction block for the model.
+
+        Args:
+            input_text (str): The text of the transcript, used to size the
+            requested summary; it is sent separately as the user message.
+
+        Returns:
+            str: The instructions, without the transcript appended.
         """
         prompt_length = self.calculate_prompt_length(input_text)
         tone_prompt, voice_prompt = self.get_tone_and_voice_prompts()
@@ -364,8 +393,7 @@ class RecommendationsGenerator:
             f"- Include bullet points for crucial findings.\n"
             f"- Prioritize the most crucial, actionable findings.\n"
             f"- Highlight important trends.\n"
-            f"- Provide forward-looking strategic recommendations.\n\n"
-            f"{input_text}"
+            f"- Provide forward-looking strategic recommendations."
         )
 
     def calculate_prompt_length(self, input_text: str) -> int:

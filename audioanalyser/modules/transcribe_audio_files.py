@@ -19,6 +19,7 @@ import os
 import json
 import sqlite3
 from dotenv import load_dotenv
+from audioanalyser.modules.sql_utils import safe_identifier
 import threading
 
 load_dotenv()
@@ -276,19 +277,18 @@ class SpeechToText:
             results (List[str]): A list of the transcribed text.
         """
         config = Config()
+        # Env-supplied name: validate before it reaches the statement.
+        table = safe_identifier(config.transcripts_db_table_name)
         with sqlite3.connect(db_filename) as conn:
             cursor = conn.cursor()
             cursor.execute(
-                f"""CREATE TABLE IF NOT EXISTS {
-                config.transcripts_db_table_name
-            } (filename TEXT, transcription TEXT)"""
+                f"CREATE TABLE IF NOT EXISTS {table} "  # nosec B608
+                "(filename TEXT, transcription TEXT)"
             )
             for result in results:
                 sql_statement = (
-                    f"""INSERT INTO {
-                        config.transcripts_db_table_name
-                    } (filename, transcription)"""
-                    f"""VALUES (?, ?)"""
+                    f"INSERT INTO {table} "  # nosec B608
+                    "(filename, transcription) VALUES (?, ?)"
                 )
                 cursor.execute(sql_statement, (audio_filename, result))
 

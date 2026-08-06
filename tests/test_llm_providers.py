@@ -44,6 +44,7 @@ def fake_openai():
         ]
     )
     module.OpenAI = MagicMock(return_value=client)
+    module.OpenAIError = type("OpenAIError", (Exception,), {})
     with patch.dict(sys.modules, {"openai": module}):
         yield module, client
 
@@ -178,24 +179,113 @@ class TestGetProvider:
         assert lp.get_provider("ollama").host == lp.DEFAULT_OLLAMA_HOST
 
 
-class TestApiKeyEnforcement:
-    """The SDK import runs first, so each case supplies its stub module.
+class TestCredentialResolution:
+    """No key means "let the SDK resolve it", not "fail".
 
-    That ordering is deliberate: a missing SDK is the more fundamental
-    blocker, so it should be reported before a missing key.
+    Each SDK has its own chain - environment variables, a CLI login
+    session, workload identity - and passing api_key=None would
+    short-circuit it. Only a genuine SDK auth failure is an error here.
     """
 
-    def test_openai_missing_key_names_the_variable(self, fake_openai):
-        with pytest.raises(lp.ProviderError, match="GPT3_API_KEY"):
-            lp.OpenAIProvider("m", api_key=None).generate("sys", "text")
+    def test_openai_omits_the_key_so_the_sdk_can_resolve_one(
+        self, fake_openai
+    ):
+        module, _ = fake_openai
 
-    def test_anthropic_missing_key_names_the_variable(self, fake_anthropic):
-        with pytest.raises(lp.ProviderError, match="ANTHROPIC_API_KEY"):
-            lp.AnthropicProvider("m", api_key=None).generate("sys", "text")
+        lp.OpenAIProvider("m", api_key=None).generate("sys", "text")
 
-    def test_gemini_missing_key_names_the_variable(self, fake_genai):
-        with pytest.raises(lp.ProviderError, match="GEMINI_API_KEY"):
-            lp.GeminiProvider("m", api_key=None).generate("sys", "text")
+        assert module.OpenAI.call_args.kwargs == {}
+
+    def test_anthropic_omits_the_key_so_a_cli_session_is_used(
+        self, fake_anthropic
+    ):
+        """`ant auth login` stores a profile the SDK reads with no key set."""
+        module, _ = fake_anthropic
+
+        lp.AnthropicProvider("m", api_key=None).generate("sys", "text")
+
+        assert module.Anthropic.call_args.kwargs == {}
+
+    def test_an_explicit_key_is_still_passed_through(self, fake_anthropic):
+        module, _ = fake_anthropic
+
+        lp.AnthropicProvider("m", api_key="sk-ant-xyz").generate("s", "t")
+
+        assert module.Anthropic.call_args.kwargs == {"api_key": "sk-ant-xyz"}
+
+    def test_an_sdk_auth_failure_names_every_accepted_option(
+        self, fake_anthropic
+    ):
+        module, _ = fake_anthropic
+        module.AnthropicError = Exception
+        module.Anthropic.side_effect = Exception("no credentials found")
+
+        with pytest.raises(lp.ProviderError) as excinfo:
+            lp.AnthropicProvider("m").generate("s", "t")
+
+        message = str(excinfo.value)
+        assert "ANTHROPIC_API_KEY" in message
+        assert "ant auth login" in message
+
+    def test_openai_auth_failure_says_there_is_no_session_login(
+        self, fake_openai
+    ):
+        """OpenAI has no OAuth equivalent; the message should say so."""
+        module, _ = fake_openai
+        module.OpenAI.side_effect = module.OpenAIError("no api key")
+
+        with pytest.raises(lp.ProviderError) as excinfo:
+            lp.OpenAIProvider("m").generate("s", "t")
+
+        message = str(excinfo.value)
+        assert "OPENAI_API_KEY" in message
+        assert "no session login" in message
+
+    def test_gemini_uses_a_google_cloud_session_when_configured(
+        self, fake_genai, clean_env
+    ):
+        """ADC via Vertex AI replaces the key entirely."""
+        _, _ = fake_genai
+        clean_env.setenv("GOOGLE_CLOUD_PROJECT", "my-project")
+        clean_env.setenv("GOOGLE_CLOUD_LOCATION", "europe-west1")
+        from google import genai
+
+        lp.GeminiProvider("m", api_key=None).generate("s", "t")
+
+        assert genai.Client.call_args.kwargs == {
+            "vertexai": True,
+            "project": "my-project",
+            "location": "europe-west1",
+        }
+
+    def test_gemini_location_defaults_to_global(self, fake_genai, clean_env):
+        clean_env.setenv("GOOGLE_CLOUD_PROJECT", "my-project")
+        clean_env.delenv("GOOGLE_CLOUD_LOCATION", raising=False)
+        from google import genai
+
+        lp.GeminiProvider("m", api_key=None).generate("s", "t")
+
+        assert genai.Client.call_args.kwargs["location"] == "global"
+
+    def test_gemini_prefers_an_explicit_key_over_the_session(
+        self, fake_genai, clean_env
+    ):
+        clean_env.setenv("GOOGLE_CLOUD_PROJECT", "my-project")
+        from google import genai
+
+        lp.GeminiProvider("m", api_key="k").generate("s", "t")
+
+        assert genai.Client.call_args.kwargs == {"api_key": "k"}
+
+    def test_gemini_auth_failure_mentions_the_gcloud_login(
+        self, fake_genai, clean_env
+    ):
+        clean_env.delenv("GOOGLE_CLOUD_PROJECT", raising=False)
+        from google import genai
+        genai.Client.side_effect = Exception("no credentials")
+
+        with pytest.raises(lp.ProviderError, match="gcloud auth"):
+            lp.GeminiProvider("m").generate("s", "t")
 
 
 class TestOpenAIProvider:
@@ -330,6 +420,16 @@ class TestOllamaProvider:
         response.json.return_value = payload
         return response
 
+    @pytest.fixture(autouse=True)
+    def _model_is_available(self):
+        """generate() checks the model exists before sending the prompt."""
+        with patch.object(
+            lp.OllamaProvider,
+            "available_models",
+            return_value=["llama3.1", "m"],
+        ):
+            yield
+
     def test_posts_to_the_chat_endpoint_and_returns_content(self):
         response = self._response({"message": {"content": "  A summary.  "}})
 
@@ -389,6 +489,154 @@ class TestOllamaProvider:
     def test_returns_empty_string_when_the_payload_has_no_content(self):
         with patch.object(requests, "post", return_value=self._response({})):
             assert lp.OllamaProvider("m").generate("s", "t") == ""
+
+
+class TestOllamaModelDiscovery:
+    """The right model is a property of the host, not of this package."""
+
+    def test_lists_the_models_the_server_has(self):
+        response = MagicMock()
+        response.json.return_value = {
+            "models": [{"name": "llama3.1:8b"}, {"name": "gemma3:4b"}]
+        }
+
+        with patch.object(requests, "get", return_value=response) as get:
+            models = lp.OllamaProvider("m").available_models()
+
+        assert models == ["llama3.1:8b", "gemma3:4b"]
+        assert get.call_args.args[0].endswith("/api/tags")
+
+    def test_a_bare_family_name_matches_a_tagged_model(self):
+        """`llama3.1` should match a pulled `llama3.1:8b`."""
+        with patch.object(
+            lp.OllamaProvider, "available_models", return_value=["llama3.1:8b"]
+        ):
+            response = MagicMock()
+            response.json.return_value = {"message": {"content": "ok"}}
+            with patch.object(requests, "post", return_value=response):
+                assert lp.OllamaProvider("llama3.1").generate("s", "t") == "ok"
+
+    def test_an_absent_model_names_what_is_available(self):
+        with patch.object(
+            lp.OllamaProvider, "available_models", return_value=["gemma3:4b"]
+        ):
+            with pytest.raises(lp.ProviderError) as excinfo:
+                lp.OllamaProvider("llama3.1").generate("s", "t")
+
+        message = str(excinfo.value)
+        assert "ollama pull llama3.1" in message
+        assert "gemma3:4b" in message
+
+    def test_says_none_when_the_server_has_no_models(self):
+        with patch.object(
+            lp.OllamaProvider, "available_models", return_value=[]
+        ):
+            with pytest.raises(lp.ProviderError, match="none"):
+                lp.OllamaProvider("llama3.1").generate("s", "t")
+
+    def test_unreachable_server_explains_how_to_start_it(self):
+        with patch.object(
+            requests, "get", side_effect=requests.ConnectionError("refused")
+        ):
+            with pytest.raises(lp.ProviderError, match="ollama serve"):
+                lp.OllamaProvider("m").available_models()
+
+    def test_reports_a_non_json_tags_response(self):
+        response = MagicMock()
+        response.json.side_effect = lp.json.JSONDecodeError("bad", "doc", 0)
+
+        with patch.object(requests, "get", return_value=response):
+            with pytest.raises(lp.ProviderError, match="Could not reach"):
+                lp.OllamaProvider("m").available_models()
+
+
+class TestCliProviders:
+    """These reach a signed-in CLI, so there is no key and no SDK."""
+
+    def _completed(self, stdout="  A summary.  ", returncode=0, stderr=""):
+        return types.SimpleNamespace(
+            stdout=stdout, stderr=stderr, returncode=returncode
+        )
+
+    def test_claude_passes_the_system_prompt_and_pipes_the_transcript(self):
+        with patch.object(lp.shutil, "which", return_value="/bin/claude"):
+            with patch.object(
+                lp.subprocess, "run", return_value=self._completed()
+            ) as run:
+                result = lp.ClaudeCliProvider("").generate("instr", "text")
+
+        assert result == "A summary."
+        argv = run.call_args.args[0]
+        assert argv[0] == "/bin/claude"
+        assert "--system-prompt" in argv
+        assert argv[argv.index("--system-prompt") + 1] == "instr"
+        # The transcript goes on stdin, never onto a command line.
+        assert run.call_args.kwargs["input"] == "text"
+        assert "text" not in argv
+
+    def test_agy_combines_the_parts_into_one_prompt(self):
+        """Agy has no system flag and auto-denies a tool call on stdin."""
+        with patch.object(lp.shutil, "which", return_value="/bin/agy"):
+            with patch.object(
+                lp.subprocess, "run", return_value=self._completed()
+            ) as run:
+                lp.AgyCliProvider("").generate("instr", "text")
+
+        argv = run.call_args.args[0]
+        assert "instr\n\ntext" in argv
+        assert run.call_args.kwargs["input"] is None
+
+    def test_no_shell_is_used(self):
+        with patch.object(lp.shutil, "which", return_value="/bin/claude"):
+            with patch.object(
+                lp.subprocess, "run", return_value=self._completed()
+            ) as run:
+                lp.ClaudeCliProvider("").generate("s", "t")
+
+        assert "shell" not in run.call_args.kwargs
+
+    def test_a_model_is_passed_only_when_asked_for(self):
+        with patch.object(lp.shutil, "which", return_value="/bin/claude"):
+            with patch.object(
+                lp.subprocess, "run", return_value=self._completed()
+            ) as run:
+                lp.ClaudeCliProvider("").generate("s", "t")
+                assert "--model" not in run.call_args.args[0]
+
+                lp.ClaudeCliProvider("some-model").generate("s", "t")
+                argv = run.call_args.args[0]
+                assert argv[argv.index("--model") + 1] == "some-model"
+
+    def test_a_missing_cli_names_the_alternative(self):
+        with patch.object(lp.shutil, "which", return_value=None):
+            with pytest.raises(lp.ProviderError, match="ANTHROPIC_API_KEY"):
+                lp.ClaudeCliProvider("").generate("s", "t")
+
+    def test_a_non_zero_exit_surfaces_the_cli_error(self):
+        failure = self._completed(
+            stdout="", returncode=1, stderr="not signed in"
+        )
+        with patch.object(lp.shutil, "which", return_value="/bin/agy"):
+            with patch.object(lp.subprocess, "run", return_value=failure):
+                with pytest.raises(lp.ProviderError, match="not signed in"):
+                    lp.AgyCliProvider("").generate("s", "t")
+
+    def test_a_hang_is_reported_as_a_timeout(self):
+        with patch.object(lp.shutil, "which", return_value="/bin/claude"):
+            with patch.object(
+                lp.subprocess,
+                "run",
+                side_effect=lp.subprocess.TimeoutExpired("claude", 300),
+            ):
+                with pytest.raises(lp.ProviderError, match="did not answer"):
+                    lp.ClaudeCliProvider("").generate("s", "t")
+
+    @pytest.mark.parametrize("name", ["claude-cli", "agy-cli"])
+    def test_get_provider_builds_them_without_a_key(self, clean_env, name):
+        provider = lp.get_provider(name)
+
+        assert isinstance(provider, lp.CliProvider)
+        assert provider.api_key is None
 
 
 class TestMissingSdk:

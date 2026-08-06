@@ -41,6 +41,7 @@ import logging
 import json
 import sqlite3
 from dotenv import load_dotenv
+from audioanalyser.modules.sql_utils import safe_identifier
 
 from audioanalyser.modules.llm_providers import get_provider
 from typing import Iterator
@@ -55,6 +56,10 @@ logging.basicConfig(
     format="%(asctime)s %(levelname)s app - %(message)s",
 )
 logger = logging.getLogger("AzureRecommendations")
+
+# Smallest summary length worth asking for. Below this the request
+# cannot carry the section headings the prompt also demands.
+MIN_SUMMARY_TOKENS = 150
 
 
 class Config:
@@ -296,6 +301,7 @@ class RecommendationsGenerator:
             data to insert per row.
         """
         db_path.parent.mkdir(parents=True, exist_ok=True)
+        table_name = safe_identifier(table_name)
         with sqlite3.connect(db_path) as conn:
             cursor = conn.cursor()
             cursor.execute(
@@ -303,7 +309,7 @@ class RecommendationsGenerator:
                 "(filename TEXT, transcription TEXT)"
             )
             cursor.executemany(
-                f"INSERT INTO {table_name} "
+                f"INSERT INTO {table_name} "  # nosec B608
                 "(filename, transcription) VALUES (?, ?)", data
             )
         logger.info(f"Inserted data into {db_path} in table {table_name}")
@@ -346,7 +352,7 @@ class RecommendationsGenerator:
 
         return (
             f"{tone_prompt}{voice_prompt}Summarize key insights from the "
-            f"provided transcripts in a concise executive "
+            f"transcript in the user message, in a concise executive "
             f"summary ({prompt_length} tokens), suitable for C-Suite "
             f"and other senior executives and business "
             f"leaders. The summary should be clear & comprehensible, neutral, "
@@ -374,8 +380,13 @@ class RecommendationsGenerator:
         """
         total_tokens = len(input_text.split())
         if self.config.PROMPT_STRATEGY == "default":
-            return max(
-                1, int(total_tokens * self.config.PROMPT_LENGTH_RATIO)
+            scaled = int(total_tokens * self.config.PROMPT_LENGTH_RATIO)
+            # Floor the target: a short transcript otherwise scales to a
+            # handful of tokens, which reads as a contradiction against
+            # the section headings requested below.
+            return min(
+                self.config.MAX_OUTPUT_LENGTH,
+                max(MIN_SUMMARY_TOKENS, scaled),
             )
         elif self.config.PROMPT_STRATEGY == "fixed":
             return min(self.config.MAX_OUTPUT_LENGTH, total_tokens)

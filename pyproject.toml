@@ -64,8 +64,14 @@ addopts = [
     "--cov-report=term-missing",
     "--cov-report=xml",
     "--cov-fail-under=95",
+    "-m", "not integration",
 ]
 testpaths = ["tests"]
+# Integration tests hit a live Ollama server and are deselected by
+# default; run them with `pytest -m integration`.
+markers = [
+    "integration: exercises a live external service (deselected by default)",
+]
 
 [tool.coverage.run]
 source = ["audioanalyser"]

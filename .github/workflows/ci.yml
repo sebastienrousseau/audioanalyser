@@ -72,11 +72,28 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.10"
-      - name: ❯ Install flake8 📦
-        run: python -m pip install flake8
-      # Run flake8
+      # PyAudio has no Linux wheel; pylint resolves imports, so the package's
+      # own dependencies must be installed for it to check call signatures.
+      - name: ❯ Install PortAudio 🔊
+        run: sudo apt-get update && sudo apt-get install -y portaudio19-dev
+
+      - name: ❯ Install linters and dependencies 📦
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+          python -m pip install flake8 pylint bandit
+
       - name: ❯ Run flake8 🔍
         run: flake8
+
+      # .pylintrc and .bandit.yml were both committed but neither tool ran,
+      # so the configuration silently rotted (retired options, dead message
+      # IDs). Running them keeps the configuration honest.
+      - name: ❯ Run pylint 🔍
+        run: pylint audioanalyser/
+
+      - name: ❯ Run bandit 🔒
+        run: bandit -c .bandit.yml -r audioanalyser/
 
   # This job builds the distribution packages, and publishes them
   # to PyPI

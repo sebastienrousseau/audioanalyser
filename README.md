@@ -197,8 +197,30 @@ prompt, the same output files.
 | `anthropic` | `pip install 'audioanalyser[anthropic]'` | `ANTHROPIC_API_KEY` | `claude-opus-5` |
 | `gemini` | `pip install 'audioanalyser[gemini]'` | `GEMINI_API_KEY` | `gemini-2.5-flash` |
 | `ollama` | nothing to install | none | `llama3.1` |
+| `claude-cli` | Claude Code, signed in | none — uses the CLI session | the CLI's own |
+| `agy-cli` | Agy CLI, signed in | none — uses the CLI session | the CLI's own |
 
 Override the model for any provider with `LLM_MODEL`.
+
+**An API key is not the only way to authenticate.** No key set means "let
+the SDK resolve one", not "fail", so a CLI login session works instead:
+
+| Provider | Session alternative to a key |
+| --- | --- |
+| `anthropic` | `ant auth login` stores a profile the SDK reads with no key set (`ANTHROPIC_AUTH_TOKEN` and workload identity federation also work; `ant auth status` shows which is active) |
+| `gemini` | `gcloud auth application-default login`, then set `GOOGLE_CLOUD_PROJECT` to route through Vertex AI |
+| `ollama` | no credential of any kind |
+| `openai` | none — the API accepts keys only |
+
+The `claude-cli` and `agy-cli` providers go further: they shell out to a
+CLI that already holds an interactive session, so no credential enters
+this package or its configuration at all. They are slower than a direct
+API call — the CLI starts a session before answering — and the work runs
+under the signed-in account. Neither passes a model unless `LLM_MODEL`
+is set, so each CLI keeps whatever it is already configured to use.
+
+When a provider cannot authenticate, the error lists every option it
+accepts rather than naming one variable.
 
 **Ollama runs locally**, so transcripts never leave the machine — useful when
 recordings are sensitive. It needs `ollama serve` running and the model
@@ -208,6 +230,26 @@ if the server is elsewhere.
 Provider SDKs are optional so that installing one backend does not pull in
 the others. Selecting a provider whose SDK is missing reports the exact
 install command rather than failing with an import error.
+
+Which Ollama model to use is a property of your machine, not of this
+package, so the provider asks the server what it has: naming a model that is
+not pulled reports the ones that are, rather than a bare HTTP error.
+
+### Running the tests
+
+```bash
+pytest                  # unit tests: 287, no network, no credentials
+pytest -m integration   # end-to-end against whatever is available locally
+```
+
+Integration tests are deselected by default and skip per provider when it
+is unavailable, so they never block CI or a contributor who has none of
+them. They run the real pipeline — transcript in, text/JSON/SQLite out —
+against a local Ollama server and against any signed-in CLI, with every
+API key cleared so a pass cannot come from one.
+
+Quality gates, all enforced in CI: `flake8`, `pylint` (10.00/10), `bandit`
+(no findings), and `pytest` at 100% statement and branch coverage.
 
 ### Create a Virtual Environment
 

@@ -36,7 +36,10 @@ from audioanalyser.modules import azure_recommendation as rec
 
 
 def _completion(text="A summary."):
-    return SimpleNamespace(choices=[SimpleNamespace(text=text)])
+    """A chat completion response: the reply lives on choices[].message."""
+    return SimpleNamespace(
+        choices=[SimpleNamespace(message=SimpleNamespace(content=text))]
+    )
 
 
 class TestConfig:
@@ -171,28 +174,48 @@ class TestPromptConstruction:
             expected_voice,
         )
 
-    def test_prompt_includes_the_tone_voice_and_source_text(
-        self, full_env, clean_env
-    ):
+    def test_instructions_carry_the_tone_and_voice(self, full_env, clean_env):
         clean_env.setenv("OUTPUT_TONE", "formal")
         generator = rec.RecommendationsGenerator(rec.Config())
 
         prompt = generator.create_prompt("the customer called about billing")
 
         assert prompt.startswith("Formal tone:\n\n")
-        assert "the customer called about billing" in prompt
         assert "executive" in prompt
+
+    def test_instructions_exclude_the_transcript(self, full_env):
+        """The transcript travels as the user message, not the system one.
+
+        Keeping it out stops a long transcript from diluting the formatting
+        rules the summary depends on.
+        """
+        generator = rec.RecommendationsGenerator(rec.Config())
+
+        prompt = generator.create_prompt("the customer called about billing")
+
+        assert "the customer called about billing" not in prompt
+
+
+class TestBuildMessages:
+    def test_splits_instructions_and_transcript_across_roles(self, full_env):
+        generator = rec.RecommendationsGenerator(rec.Config())
+
+        messages = generator.build_messages("customer wants a refund")
+
+        assert [m["role"] for m in messages] == ["system", "user"]
+        assert "executive" in messages[0]["content"]
+        assert messages[1]["content"] == "customer wants a refund"
 
 
 class TestGenerateRecommendation:
-    def test_sends_the_prompt_and_returns_the_stripped_completion(
+    def test_sends_the_messages_and_returns_the_stripped_reply(
         self, full_env, tmp_path
     ):
         source = tmp_path / "call.txt"
         source.write_text("customer wants a refund")
         generator = rec.RecommendationsGenerator(rec.Config())
         client = MagicMock()
-        client.completions.create.return_value = _completion(
+        client.chat.completions.create.return_value = _completion(
             "  Recommend a refund.  "
         )
 
@@ -200,11 +223,42 @@ class TestGenerateRecommendation:
             result = generator.generate_recommendation(rec.Transcript(source))
 
         assert result == "Recommend a refund."
-        kwargs = client.completions.create.call_args.kwargs
-        assert kwargs["model"] == "gpt-3.5-turbo-instruct"
-        assert kwargs["max_tokens"] == 2048
+        kwargs = client.chat.completions.create.call_args.kwargs
+        assert kwargs["model"] == "gpt-4.1-mini"
+        assert kwargs["max_completion_tokens"] == 2048
         assert kwargs["temperature"] == 0.8
-        assert "customer wants a refund" in kwargs["prompt"]
+        assert kwargs["messages"][1]["content"] == "customer wants a refund"
+
+    def test_uses_the_model_named_in_the_environment(
+        self, full_env, clean_env, tmp_path
+    ):
+        clean_env.setenv("OPENAI_MODEL", "gpt-4.1-nano")
+        source = tmp_path / "call.txt"
+        source.write_text("hello")
+        generator = rec.RecommendationsGenerator(rec.Config())
+        client = MagicMock()
+        client.chat.completions.create.return_value = _completion("text")
+
+        with patch.object(openai, "OpenAI", return_value=client):
+            generator.generate_recommendation(rec.Transcript(source))
+
+        kwargs = client.chat.completions.create.call_args.kwargs
+        assert kwargs["model"] == "gpt-4.1-nano"
+
+    def test_returns_empty_string_when_the_model_returns_no_content(
+        self, full_env, tmp_path
+    ):
+        """A refusal or filtered response leaves content as None."""
+        source = tmp_path / "call.txt"
+        source.write_text("hello")
+        generator = rec.RecommendationsGenerator(rec.Config())
+        client = MagicMock()
+        client.chat.completions.create.return_value = _completion(None)
+
+        with patch.object(openai, "OpenAI", return_value=client):
+            result = generator.generate_recommendation(rec.Transcript(source))
+
+        assert result == ""
 
     def test_builds_the_client_with_the_configured_api_key(
         self, full_env, tmp_path
@@ -213,7 +267,7 @@ class TestGenerateRecommendation:
         source.write_text("hello")
         generator = rec.RecommendationsGenerator(rec.Config())
         client = MagicMock()
-        client.completions.create.return_value = _completion("text")
+        client.chat.completions.create.return_value = _completion("text")
 
         with patch.object(openai, "OpenAI", return_value=client) as factory:
             generator.generate_recommendation(rec.Transcript(source))
@@ -231,7 +285,11 @@ class TestGenerateRecommendation:
 
         assert "openai.Completion" not in source
         assert "openai.api_key" not in source
-        assert "client.completions.create" in source
+        assert "client.chat.completions.create" in source
+        # The legacy completions endpoint serves only gpt-3.5-turbo-instruct,
+        # which OpenAI has been retiring. Matches the quoted literal so the
+        # explanatory comment naming the old model does not trip this.
+        assert '"gpt-3.5-turbo-instruct"' not in source
 
 
 class TestPersistence:

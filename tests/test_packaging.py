@@ -24,16 +24,32 @@ version without any step failing.
 import configparser
 import pathlib
 import re
-import tomllib
 
 import audioanalyser
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 
 
-def _pyproject():
-    with open(ROOT / "pyproject.toml", "rb") as handle:
-        return tomllib.load(handle)
+def _pyproject_value(section, key):
+    """Read one scalar from a pyproject section.
+
+    Deliberately not tomllib: that is 3.11+, and this package supports 3.10.
+    Only two scalars are needed, so a section-aware scan avoids adding a
+    backport dependency just for the tests.
+    """
+    text = (ROOT / "pyproject.toml").read_text()
+    current = None
+    for line in text.splitlines():
+        stripped = line.strip()
+        if stripped.startswith("[") and stripped.endswith("]"):
+            current = stripped[1:-1]
+            continue
+        if current != section:
+            continue
+        match = re.match(rf'{re.escape(key)}\s*=\s*"([^"]+)"', stripped)
+        if match:
+            return match.group(1)
+    raise AssertionError(f"{key} not found in [{section}]")
 
 
 def _setup_cfg():
@@ -49,9 +65,8 @@ def _setup_py():
 class TestVersionAgreement:
     def test_setup_cfg_and_pyproject_declare_the_same_version(self):
         """The release job reads setup.cfg; poetry builds from pyproject."""
-        assert (
-            _setup_cfg()["metadata"]["version"]
-            == _pyproject()["tool"]["poetry"]["version"]
+        assert _setup_cfg()["metadata"]["version"] == _pyproject_value(
+            "tool.poetry", "version"
         )
 
     def test_the_package_reports_that_version_too(self):
@@ -65,16 +80,18 @@ class TestPythonFloorAgreement:
         )
         assert declared, "setup.py declares no python_requires"
 
-        poetry = _pyproject()["tool"]["poetry"]["dependencies"]["python"]
+        poetry = _pyproject_value("tool.poetry.dependencies", "python")
         assert poetry.lstrip("^~>=") == declared.group(1)
 
     def test_the_classifiers_do_not_advertise_an_unsupported_version(self):
         """A classifier for a version below the floor invites bug reports."""
         floor = tuple(
             int(part)
-            for part in _pyproject()["tool"]["poetry"]["dependencies"][
-                "python"
-            ].lstrip("^~>=").split(".")
+            for part in _pyproject_value(
+                "tool.poetry.dependencies", "python"
+            )
+            .lstrip("^~>=")
+            .split(".")
         )
         advertised = re.findall(
             r"'Programming Language :: Python :: ([0-9]+\.[0-9]+)'",

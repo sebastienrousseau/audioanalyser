@@ -23,6 +23,21 @@ python = "^3.10"
 python-dotenv="1.2.2"
 requests = "2.33.0"
 
+# Provider SDKs are optional: installing one backend must not pull in the
+# others. openai stays a hard dependency as the default provider; ollama
+# needs no SDK at all (plain HTTP).
+[tool.poetry.group.anthropic]
+optional = true
+
+[tool.poetry.group.anthropic.dependencies]
+anthropic = ">=0.120.0"
+
+[tool.poetry.group.gemini]
+optional = true
+
+[tool.poetry.group.gemini.dependencies]
+google-genai = ">=2.16.0"
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"

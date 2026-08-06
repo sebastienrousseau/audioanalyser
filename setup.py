@@ -46,6 +46,11 @@ setup(
         'cherrypy>=18.6.0',
         'pyaudio>=0.2.14',
     ],
+    extras_require={
+        'anthropic': ['anthropic>=0.120.0'],
+        'gemini': ['google-genai>=2.16.0'],
+        'all': ['anthropic>=0.120.0', 'google-genai>=2.16.0'],
+    },
     python_requires='>=3.10',
     classifiers=[
         'Development Status :: 4 - Beta',

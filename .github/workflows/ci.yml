@@ -60,6 +60,18 @@ jobs:
       - name: ❯ Run pytest 🧪
         run: pytest
 
+      # pytest writes coverage.xml via --cov-report=xml. fail_ci_if_error is
+      # deliberately true: a silent upload failure is how the badge came to
+      # read "unknown" for years while the repo looked instrumented.
+      - name: ❯ Upload coverage to Codecov 📊
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./coverage.xml
+          flags: unittests
+          fail_ci_if_error: true
+          verbose: true
+
   # This job runs flake8 to check for code style issues
   lint:
     needs: version

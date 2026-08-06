@@ -29,10 +29,10 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
-import openai
 import pytest
 
 from audioanalyser.modules import azure_recommendation as rec
+from audioanalyser.modules import llm_providers as lp
 
 
 def _completion(text="A summary."):
@@ -196,98 +196,67 @@ class TestPromptConstruction:
         assert "the customer called about billing" not in prompt
 
 
-class TestBuildMessages:
-    def test_splits_instructions_and_transcript_across_roles(self, full_env):
-        generator = rec.RecommendationsGenerator(rec.Config())
-
-        messages = generator.build_messages("customer wants a refund")
-
-        assert [m["role"] for m in messages] == ["system", "user"]
-        assert "executive" in messages[0]["content"]
-        assert messages[1]["content"] == "customer wants a refund"
-
-
-class TestGenerateRecommendation:
-    def test_sends_the_messages_and_returns_the_stripped_reply(
+class TestProviderDelegation:
+    def test_sends_the_instructions_and_transcript_separately(
         self, full_env, tmp_path
     ):
+        """The provider receives the two parts, not a concatenated prompt."""
         source = tmp_path / "call.txt"
         source.write_text("customer wants a refund")
         generator = rec.RecommendationsGenerator(rec.Config())
-        client = MagicMock()
-        client.chat.completions.create.return_value = _completion(
-            "  Recommend a refund.  "
-        )
+        provider = MagicMock()
+        provider.generate.return_value = "Summary."
 
-        with patch.object(openai, "OpenAI", return_value=client):
+        with patch.object(rec, "get_provider", return_value=provider):
             result = generator.generate_recommendation(rec.Transcript(source))
 
-        assert result == "Recommend a refund."
-        kwargs = client.chat.completions.create.call_args.kwargs
-        assert kwargs["model"] == "gpt-4.1-mini"
-        assert kwargs["max_completion_tokens"] == 2048
+        assert result == "Summary."
+        kwargs = provider.generate.call_args.kwargs
+        assert "executive" in kwargs["system"]
+        assert kwargs["user_text"] == "customer wants a refund"
+        assert kwargs["max_tokens"] == 2048
         assert kwargs["temperature"] == 0.8
-        assert kwargs["messages"][1]["content"] == "customer wants a refund"
 
-    def test_uses_the_model_named_in_the_environment(
-        self, full_env, clean_env, tmp_path
-    ):
-        clean_env.setenv("OPENAI_MODEL", "gpt-4.1-nano")
+    def test_uses_whichever_provider_is_configured(self, full_env, tmp_path):
+        """Selection is the provider layer's job, not this module's."""
         source = tmp_path / "call.txt"
         source.write_text("hello")
         generator = rec.RecommendationsGenerator(rec.Config())
-        client = MagicMock()
-        client.chat.completions.create.return_value = _completion("text")
 
-        with patch.object(openai, "OpenAI", return_value=client):
+        with patch.object(rec, "get_provider") as get_provider:
+            get_provider.return_value.generate.return_value = "text"
             generator.generate_recommendation(rec.Transcript(source))
 
-        kwargs = client.chat.completions.create.call_args.kwargs
-        assert kwargs["model"] == "gpt-4.1-nano"
+        get_provider.assert_called_once_with()
 
-    def test_returns_empty_string_when_the_model_returns_no_content(
-        self, full_env, tmp_path
-    ):
-        """A refusal or filtered response leaves content as None."""
-        source = tmp_path / "call.txt"
-        source.write_text("hello")
-        generator = rec.RecommendationsGenerator(rec.Config())
-        client = MagicMock()
-        client.chat.completions.create.return_value = _completion(None)
 
-        with patch.object(openai, "OpenAI", return_value=client):
-            result = generator.generate_recommendation(rec.Transcript(source))
+class TestOpenAiMigrationGuards:
+    """Guards two migrations that both failed silently before.
 
-        assert result == ""
+    The OpenAI call now lives in llm_providers, so the assertions are split:
+    this module must not reach for the SDK at all, and the provider must not
+    use the resources removed in openai 1.0.
+    """
 
-    def test_builds_the_client_with_the_configured_api_key(
-        self, full_env, tmp_path
-    ):
-        source = tmp_path / "call.txt"
-        source.write_text("hello")
-        generator = rec.RecommendationsGenerator(rec.Config())
-        client = MagicMock()
-        client.chat.completions.create.return_value = _completion("text")
-
-        with patch.object(openai, "OpenAI", return_value=client) as factory:
-            generator.generate_recommendation(rec.Transcript(source))
-
-        factory.assert_called_once_with(api_key="test-openai-key")
-
-    def test_does_not_use_the_resource_removed_in_openai_v1(self):
-        """Guards the migration from openai<1.0.
-
-        openai.Completion and the global api_key were removed in 1.0;
-        calling them raises APIRemovedInV1 and the failure is swallowed by
-        azure_recommendation(), so the feature would fail silently.
-        """
+    def test_this_module_does_not_touch_an_sdk_directly(self):
         source = Path(rec.__file__).read_text()
+
+        assert "import openai" not in source
+        assert "get_provider" in source
+
+    def test_the_provider_avoids_the_resource_removed_in_openai_v1(self):
+        """openai.Completion and the global api_key were removed in 1.0.
+
+        Calling them raises APIRemovedInV1, which azure_recommendation()
+        swallows - so the feature would fail silently rather than crash.
+        """
+        source = Path(lp.__file__).read_text()
 
         assert "openai.Completion" not in source
         assert "openai.api_key" not in source
         assert "client.chat.completions.create" in source
         # The legacy completions endpoint serves only gpt-3.5-turbo-instruct,
-        # which OpenAI has been retiring. Matches the quoted literal so the
+        # which OpenAI has been retiring. Matches the quoted literal so an
         # explanatory comment naming the old model does not trip this.
         assert '"gpt-3.5-turbo-instruct"' not in source
 
@@ -399,7 +368,7 @@ class TestEntryPoint:
         (folders["transcripts"] / "call.txt").write_text("customer text")
 
         with patch.object(
-            openai, "OpenAI", side_effect=RuntimeError("api unavailable")
+            rec, "get_provider", side_effect=RuntimeError("api unavailable")
         ):
             rec.azure_recommendation()
 

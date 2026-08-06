@@ -36,12 +36,13 @@ Workflow:
 """
 
 # Importing necessary libraries and modules
-import openai
 from pathlib import Path
 import logging
 import json
 import sqlite3
 from dotenv import load_dotenv
+
+from audioanalyser.modules.llm_providers import get_provider
 from typing import Iterator
 import os
 
@@ -54,14 +55,6 @@ logging.basicConfig(
     format="%(asctime)s %(levelname)s app - %(message)s",
 )
 logger = logging.getLogger("AzureRecommendations")
-
-# gpt-3.5-turbo-instruct was the only model the legacy completions endpoint
-# still served, and OpenAI has been retiring it. gpt-4.1-mini sits in the
-# efficient tier while following the structural instructions this prompt
-# relies on - headings, bullets, ordering - noticeably better. Override with
-# OPENAI_MODEL; the library also accepts gpt-4.1-nano, gpt-4o-mini,
-# gpt-5-mini and gpt-5-nano.
-DEFAULT_MODEL = "gpt-4.1-mini"
 
 
 class Config:
@@ -107,9 +100,6 @@ class Config:
             os.getenv("MAX_OUTPUT_LENGTH", 2048)
         )
         self.OUTPUT_VOICE = os.getenv("OUTPUT_VOICE", "neutral")
-        # Overridable so the model can be changed without a code edit, e.g.
-        # gpt-4.1-nano to cut cost further, or gpt-5-mini for more capability.
-        self.OPENAI_MODEL = os.getenv("OPENAI_MODEL", DEFAULT_MODEL)
         self.validate()
 
     def validate(self) -> None:
@@ -329,41 +319,16 @@ class RecommendationsGenerator:
         Returns:
             str: The generated recommendation text.
         """
-        # openai>=1.0 removed the module-level Completion resource and the
-        # global api_key; requests go through a client instance.
-        client = openai.OpenAI(api_key=self.config.GPT3_API_KEY)
-
-        response = client.chat.completions.create(
-            model=self.config.OPENAI_MODEL,
-            messages=self.build_messages(transcript.text),
+        # The provider is chosen by LLM_PROVIDER; every backend takes the same
+        # system/user pair and returns plain text, so nothing here branches on
+        # which service is configured.
+        provider = get_provider()
+        return provider.generate(
+            system=self.create_prompt(transcript.text),
+            user_text=transcript.text,
+            max_tokens=self.config.MAX_OUTPUT_LENGTH,
             temperature=0.8,
-            max_completion_tokens=self.config.MAX_OUTPUT_LENGTH,
-            n=1,
-            stop=None,
         )
-
-        content = response.choices[0].message.content
-        return content.strip() if content else ""
-
-    def build_messages(self, input_text: str) -> list:
-        """
-        Builds the chat messages sent to the model.
-
-        The instructions travel as a system message and the transcript as a
-        user message. Chat models weight the two differently, so keeping the
-        source text out of the instruction block stops long transcripts from
-        diluting the formatting rules.
-
-        Args:
-            input_text (str): The text of the transcript.
-
-        Returns:
-            list: Chat messages in the order the API expects.
-        """
-        return [
-            {"role": "system", "content": self.create_prompt(input_text)},
-            {"role": "user", "content": input_text},
-        ]
 
     def create_prompt(self, input_text: str) -> str:
         """
